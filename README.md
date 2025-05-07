@@ -1,4 +1,4 @@
-# Node.js Express Backend
+# GHF Backend
 
 A scalable and production-ready Express.js backend application with modular architecture, built-in security, and comprehensive utilities for rapid application development.
 
@@ -43,7 +43,7 @@ A scalable and production-ready Express.js backend application with modular arch
 ## Project Structure
 
 ```
-backend/
+ghf-backend/
 ├── .env                            # Environment variables
 ├── .env.example                    # Example environment file with keys but no values
 ├── .gitignore                      # Git ignore file
@@ -79,8 +79,8 @@ backend/
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd backend
+   git clone git@github.com:AURORAWAVELABS/GHF-backend.git
+   cd ghf-backend
    ```
 
 2. Install dependencies:
