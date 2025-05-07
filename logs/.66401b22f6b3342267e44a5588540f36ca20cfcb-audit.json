@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/mac/nodejs-projects/ghf-backend/logs/.66401b22f6b3342267e44a5588540f36ca20cfcb-audit.json",
+    "files": [
+        {
+            "date": 1746661345771,
+            "name": "/Users/mac/nodejs-projects/ghf-backend/logs/2025-05-08-error.log",
+            "hash": "5f246065b6b63d6f6fb3f39252143a2d64faaa9b64c635ed29d711aaf270f412"
+        }
+    ],
+    "hashType": "sha256"
+}
