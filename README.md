@@ -570,4 +570,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - Express.js team for the excellent web framework
 - Sequelize team for the ORM
-- All the open-source contributors of the libraries used in this project
+- All the open-source contributors of the libraries used in this project.
