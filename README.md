@@ -1,4 +1,3 @@
-# GHF Backend
 
 A scalable and production-ready Express.js backend application with modular architecture, built-in security, and comprehensive utilities for rapid application development.
 
