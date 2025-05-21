@@ -1,29 +1,28 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const config = require('../config/config');
 
 /**
  * Create a unique filename
- * @param {string} originalName - Original file name
+ * @param {string} originalname - Original file name
  * @returns {string} - Unique filename
  */
-const createUniqueFilename = (originalName) => {
+const createUniqueFilename = (originalname) => {
   const timestamp = Date.now();
   const random = crypto.randomBytes(8).toString('hex');
-  const extension = path.extname(originalName);
+  const extension = path.extname(originalname);
   
   return `${timestamp}-${random}${extension}`;
 };
 
 /**
- * Get file path in upload directory
+ * Get file path in uploads directory
  * @param {string} filename - File name
  * @param {string} subdir - Subdirectory (optional)
  * @returns {string} - Full file path
  */
 const getFilePath = (filename, subdir = '') => {
-  const uploadDir = path.join(process.cwd(), config.UPLOAD.DIR, subdir);
+  const uploadDir = path.join(process.cwd(), 'uploads', subdir);
   
   // Create directory if it doesn't exist
   if (!fs.existsSync(uploadDir)) {
@@ -34,44 +33,10 @@ const getFilePath = (filename, subdir = '') => {
 };
 
 /**
- * Save a file to disk
- * @param {Buffer} buffer - File data
- * @param {string} filename - File name
- * @param {string} subdir - Subdirectory (optional)
- * @returns {string} - Saved file path
- */
-const saveFile = (buffer, filename, subdir = '') => {
-  const filePath = getFilePath(filename, subdir);
-  fs.writeFileSync(filePath, buffer);
-  return filePath;
-};
-
-/**
- * Delete a file
- * @param {string} filename - File name
- * @param {string} subdir - Subdirectory (optional)
- * @returns {boolean} - Whether the file was deleted
- */
-const deleteFile = (filename, subdir = '') => {
-  try {
-    const filePath = getFilePath(filename, subdir);
-    
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-      return true;
-    }
-    
-    return false;
-  } catch (error) {
-    return false;
-  }
-};
-
-/**
- * Get file size in human-readable format
+ * Format file size for display
  * @param {number} bytes - File size in bytes
- * @param {number} decimals - Number of decimal places
- * @returns {string} - Human-readable file size
+ * @param {number} decimals - Decimal places
+ * @returns {string} - Formatted file size
  */
 const formatFileSize = (bytes, decimals = 2) => {
   if (bytes === 0) return '0 Bytes';
@@ -86,7 +51,7 @@ const formatFileSize = (bytes, decimals = 2) => {
 };
 
 /**
- * Get file MIME type from extension
+ * Get MIME type from file extension
  * @param {string} filename - File name
  * @returns {string} - MIME type
  */
@@ -94,20 +59,23 @@ const getMimeType = (filename) => {
   const extension = path.extname(filename).toLowerCase().substring(1);
   
   const mimeTypes = {
-    jpg: 'image/jpeg',
-    jpeg: 'image/jpeg',
-    png: 'image/png',
-    gif: 'image/gif',
-    pdf: 'application/pdf',
-    doc: 'application/msword',
-    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    xls: 'application/vnd.ms-excel',
-    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    csv: 'text/csv',
-    txt: 'text/plain',
-    html: 'text/html',
-    json: 'application/json',
-    xml: 'application/xml',
+    'pdf': 'application/pdf',
+    'doc': 'application/msword',
+    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'xls': 'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'gif': 'image/gif',
+    'svg': 'image/svg+xml',
+    'csv': 'text/csv',
+    'txt': 'text/plain',
+    'json': 'application/json',
+    'xml': 'application/xml',
+    'zip': 'application/zip',
+    'rar': 'application/x-rar-compressed',
+    '7z': 'application/x-7z-compressed',
   };
   
   return mimeTypes[extension] || 'application/octet-stream';
@@ -116,8 +84,6 @@ const getMimeType = (filename) => {
 module.exports = {
   createUniqueFilename,
   getFilePath,
-  saveFile,
-  deleteFile,
   formatFileSize,
   getMimeType,
 };
