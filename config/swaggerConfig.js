@@ -1,77 +1,64 @@
-const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerJsdoc = require('swagger-jsdoc');
 const swaggerUi = require('swagger-ui-express');
-const path = require('path');
-const fs = require('fs');
 const config = require('./config');
 
 // Swagger definition
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Express API Documentation',
-      version: '1.0.0',
-      description: 'API documentation for Express backend',
-      contact: {
-        name: 'API Support',
-        email: 'support@example.com',
-      },
+const swaggerDefinition = {
+  openapi: '3.0.0',
+  info: {
+    title: 'GHF HR System API',
+    version: '1.0.0',
+    description: 'API documentation for GHF HR System',
+    contact: {
+      name: 'GHF IT Team',
+      email: 'it@ghf.com',
     },
-    servers: [
-      {
-        url: `http://localhost:${config.PORT}/api/${config.API_VERSION}`,
-        description: 'Development server',
-      },
-      {
-        url: `https://yourproductiondomain.com/api/${config.API_VERSION}`,
-        description: 'Production server',
-      },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-        },
-      },
-    },
-    security: [
-      {
-        bearerAuth: [],
-      },
-    ],
   },
-  apis: [
-    path.join(__dirname, '../routes/*.js'),
-    path.join(__dirname, '../models/*.js'),
+  servers: [
+    {
+      url: `http://localhost:${config.PORT}/api/${config.API_VERSION}`,
+      description: 'Development server',
+    },
+  ],
+  components: {
+    securitySchemes: {
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+    },
+  },
+  security: [
+    {
+      bearerAuth: [],
+    },
   ],
 };
 
-// Generate Swagger specification
-const swaggerSpec = swaggerJsDoc(swaggerOptions);
+// Options for the swagger docs
+const options = {
+  swaggerDefinition,
+  // Paths to files containing OpenAPI definitions
+  apis: ['./routes/*.js'],
+};
 
-// Export function to configure Swagger UI
-const swaggerConfig = (app) => {
-  // Serve Swagger docs
+// Initialize swagger-jsdoc
+const swaggerSpec = swaggerJsdoc(options);
+
+/**
+ * Configure Swagger for Express
+ * @param {Object} app - Express app
+ */
+const setupSwagger = (app) => {
+  // Serve swagger docs
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  
-  // Serve Swagger specification as JSON
+
+  // Serve swagger spec as JSON
   app.get('/api-docs.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(swaggerSpec);
   });
-  
-  // Write Swagger spec to file for other tools
-  const docsDir = path.join(process.cwd(), 'docs');
-  if (!fs.existsSync(docsDir)) {
-    fs.mkdirSync(docsDir, { recursive: true });
-  }
-  
-  fs.writeFileSync(
-    path.join(docsDir, 'api-docs.json'),
-    JSON.stringify(swaggerSpec, null, 2)
-  );
 };
 
-module.exports = swaggerConfig;
+module.exports = setupSwagger;
