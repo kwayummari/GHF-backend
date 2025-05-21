@@ -1,7 +1,3 @@
-```
-
-## routes/leaveRoutes.js
-```javascript
 const express = require('express');
 const leaveController = require('../controllers/leaveController');
 const { authenticate, authorize } = require('../middlewares/authMiddleware');
@@ -327,19 +323,3 @@ router.put('/:id', authenticate, leaveApplicationValidator, validateRequest, lea
 router.put('/:id/cancel', authenticate, leaveController.cancelLeaveApplication);
 
 module.exports = router;
-```
-
-## routes/attendanceRoutes.js
-```javascript
-const express = require('express');
-const attendanceController = require('../controllers/attendanceController');
-const { authenticate, authorize } = require('../middlewares/authMiddleware');
-const validateRequest = require('../middlewares/validateRequest');
-const { clockInValidator, clockOutValidator, attendanceUpdateValidator } = require('../validators/attendanceValidator');
-const { holidayValidator } = require('../validators/holidayValidator');
-
-const router = express.Router();
-
-/**
- * @swagger
- * tags
