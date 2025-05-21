@@ -3,47 +3,42 @@ const config = require('../config/config');
 
 /**
  * Generate a JWT token
- * @param {Object} payload - The data to include in the token
- * @param {Object} options - Additional options
- * @returns {string} - The JWT token
+ * @param {Object} payload - Data to include in the token
+ * @returns {string} - JWT token
  */
-const generateToken = (payload, options = {}) => {
-  const { expiresIn = config.JWT.EXPIRES_IN, secret = config.JWT.SECRET } = options;
-  
-  return jwt.sign(payload, secret, { expiresIn });
+const generateToken = (payload) => {
+  return jwt.sign(payload, config.JWT.SECRET, {
+    expiresIn: config.JWT.EXPIRES_IN,
+  });
 };
 
 /**
  * Generate a refresh token
- * @param {Object} payload - The data to include in the token
- * @returns {string} - The refresh token
+ * @param {Object} payload - Data to include in the token
+ * @returns {string} - Refresh token
  */
 const generateRefreshToken = (payload) => {
-  return generateToken(payload, {
+  return jwt.sign(payload, config.JWT.REFRESH_SECRET, {
     expiresIn: config.JWT.REFRESH_EXPIRES_IN,
-    secret: config.JWT.REFRESH_SECRET,
   });
 };
 
 /**
  * Verify a JWT token
- * @param {string} token - The token to verify
- * @param {Object} options - Additional options
- * @returns {Object} - The decoded token payload
+ * @param {string} token - JWT token
+ * @returns {Object} - Decoded token payload
  */
-const verifyToken = (token, options = {}) => {
-  const { secret = config.JWT.SECRET } = options;
-  
-  return jwt.verify(token, secret);
+const verifyToken = (token) => {
+  return jwt.verify(token, config.JWT.SECRET);
 };
 
 /**
  * Verify a refresh token
- * @param {string} token - The token to verify
- * @returns {Object} - The decoded token payload
+ * @param {string} token - Refresh token
+ * @returns {Object} - Decoded token payload
  */
 const verifyRefreshToken = (token) => {
-  return verifyToken(token, { secret: config.JWT.REFRESH_SECRET });
+  return jwt.verify(token, config.JWT.REFRESH_SECRET);
 };
 
 module.exports = {
