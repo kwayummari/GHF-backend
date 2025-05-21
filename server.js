@@ -1,38 +1,87 @@
-const http = require('http');
-const app = require('./app');
+const express = require('express');
+const helmet = require('helmet');
+const cors = require('cors');
+const morgan = require('morgan');
+const passport = require('passport');
+const path = require('path');
+const { StatusCodes } = require('http-status-codes');
 const config = require('./config/config');
+const { sequelize, testConnection } = require('./config/dbConfig');
+const passportConfig = require('./config/passportConfig');
+const setupSwagger = require('./config/swaggerConfig');
+const errorHandler = require('./middlewares/errorHandler');
+const routes = require('./routes');
 const logger = require('./utils/logger');
-const db = require('./models');
 
-const server = http.createServer(app);
+// Create Express app
+const app = express();
+
+// Apply basic middlewares
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// Setup logger
+app.use(morgan('dev', { stream: logger.stream }));
+
+// Initialize Passport
+app.use(passport.initialize());
+passportConfig(passport);
+
+// Static files directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Setup API routes
+app.use(`/api/${config.API_VERSION}`, routes);
+
+// Setup Swagger documentation
+setupSwagger(app);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(StatusCodes.OK).json({
+    status: 'UP',
+    timestamp: new Date().toISOString(),
+    environment: config.NODE_ENV,
+  });
+});
+
+// Error handling
+app.use((req, res, next) => {
+  res.status(StatusCodes.NOT_FOUND).json({
+    success: false,
+    message: 'Endpoint not found',
+  });
+});
+
+app.use(errorHandler);
+
+// Start server
+const PORT = config.PORT;
+
+// Only start server if database connection is successful
+const startServer = async () => {
+  const dbConnected = await testConnection();
+  
+  if (dbConnected) {
+    app.listen(PORT, () => {
+      logger.info(`Server running in ${config.NODE_ENV} mode on port ${PORT}`);
+      logger.info(`API Documentation: http://localhost:${PORT}/api-docs`);
+    });
+  } else {
+    logger.error('Failed to connect to database. Server not started.');
+    process.exit(1);
+  }
+};
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
   logger.error('Unhandled Rejection:', err);
-  // Close server & exit process
-  server.close(() => process.exit(1));
+  process.exit(1);
 });
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  logger.error('Uncaught Exception:', err);
-  // Close server & exit process
-  server.close(() => process.exit(1));
-});
+// Start the server
+startServer();
 
-// Sync database models
-db.sequelize
-  .sync({ alter: config.NODE_ENV === 'development' })
-  .then(() => {
-    logger.info('Database connected');
-    
-    // Start the server
-    server.listen(config.PORT, () => {
-      logger.info(`Server running in ${config.NODE_ENV} mode on port ${config.PORT}`);
-      logger.info(`API Documentation available at http://localhost:${config.PORT}/api-docs`);
-    });
-  })
-  .catch((err) => {
-    logger.error('Failed to connect to database:', err);
-    process.exit(1);
-  });
+module.exports = app;
