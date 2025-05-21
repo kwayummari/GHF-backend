@@ -1,42 +1,82 @@
 /**
- * Format a date to ISO string
+ * Format a date as YYYY-MM-DD
  * @param {Date} date - Date to format
- * @returns {string} - Formatted date string
- */
-const formatISODate = (date) => {
-  return date instanceof Date ? date.toISOString() : null;
-};
-
-/**
- * Format a date to YYYY-MM-DD
- * @param {Date} date - Date to format
- * @returns {string} - Formatted date string
+ * @returns {string} - Formatted date
  */
 const formatDate = (date) => {
   if (!(date instanceof Date)) {
-    return null;
+    date = new Date(date);
   }
   
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  
-  return `${year}-${month}-${day}`;
+  return date.toISOString().split('T')[0];
 };
 
 /**
- * Format a date to locale string
+ * Format a date as localized string
  * @param {Date} date - Date to format
- * @param {string} locale - Locale (default: 'en-US')
- * @param {Object} options - Format options
- * @returns {string} - Formatted date string
+ * @param {string} locale - Locale string (e.g., 'en-US')
+ * @param {Object} options - Formatter options
+ * @returns {string} - Formatted date
  */
-const formatLocaleDate = (date, locale = 'en-US', options = {}) => {
+const formatLocalDate = (date, locale = 'en-US', options = {}) => {
   if (!(date instanceof Date)) {
-    return null;
+    date = new Date(date);
   }
   
   return date.toLocaleDateString(locale, options);
+};
+
+/**
+ * Calculate the difference in days between two dates
+ * @param {Date} startDate - Start date
+ * @param {Date} endDate - End date
+ * @returns {number} - Number of days
+ */
+const dayDifference = (startDate, endDate) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  // Set hours to 0 to ignore time differences
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  
+  // Calculate difference in milliseconds
+  const diffTime = Math.abs(end - start);
+  
+  // Convert to days and add 1 to include both start and end days
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+};
+
+/**
+ * Check if a date is in the past
+ * @param {Date} date - Date to check
+ * @returns {boolean} - Whether the date is in the past
+ */
+const isPastDate = (date) => {
+  const now = new Date();
+  const checkDate = new Date(date);
+  
+  // Set times to midnight for date comparison only
+  now.setHours(0, 0, 0, 0);
+  checkDate.setHours(0, 0, 0, 0);
+  
+  return checkDate < now;
+};
+
+/**
+ * Check if a date is in the future
+ * @param {Date} date - Date to check
+ * @returns {boolean} - Whether the date is in the future
+ */
+const isFutureDate = (date) => {
+  const now = new Date();
+  const checkDate = new Date(date);
+  
+  // Set times to midnight for date comparison only
+  now.setHours(0, 0, 0, 0);
+  checkDate.setHours(0, 0, 0, 0);
+  
+  return checkDate > now;
 };
 
 /**
@@ -45,82 +85,45 @@ const formatLocaleDate = (date, locale = 'en-US', options = {}) => {
  * @returns {boolean} - Whether the date is today
  */
 const isToday = (date) => {
-  if (!(date instanceof Date)) {
-    return false;
-  }
+  const now = new Date();
+  const checkDate = new Date(date);
   
-  const today = new Date();
   return (
-    date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
+    checkDate.getDate() === now.getDate() &&
+    checkDate.getMonth() === now.getMonth() &&
+    checkDate.getFullYear() === now.getFullYear()
   );
 };
 
 /**
  * Add days to a date
- * @param {Date} date - Start date
+ * @param {Date} date - Date to modify
  * @param {number} days - Number of days to add
- * @returns {Date} - Resulting date
+ * @returns {Date} - New date
  */
 const addDays = (date, days) => {
-  if (!(date instanceof Date)) {
-    return null;
-  }
-  
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
 };
 
 /**
- * Calculate difference in days between two dates
- * @param {Date} date1 - First date
- * @param {Date} date2 - Second date
- * @returns {number} - Number of days difference
- */
-const dayDiff = (date1, date2) => {
-  if (!(date1 instanceof Date) || !(date2 instanceof Date)) {
-    return null;
-  }
-  
-  const diffTime = Math.abs(date2 - date1);
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-};
-
-/**
- * Check if a date is in the past
+ * Get the name of the day of the week
  * @param {Date} date - Date to check
- * @returns {boolean} - Whether the date is in the past
+ * @returns {string} - Day name
  */
-const isPast = (date) => {
-  if (!(date instanceof Date)) {
-    return false;
-  }
-  
-  return date < new Date();
-};
-
-/**
- * Check if a date is in the future
- * @param {Date} date - Date to check
- * @returns {boolean} - Whether the date is in the future
- */
-const isFuture = (date) => {
-  if (!(date instanceof Date)) {
-    return false;
-  }
-  
-  return date > new Date();
+const getDayName = (date) => {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return days[new Date(date).getDay()];
 };
 
 module.exports = {
-  formatISODate,
   formatDate,
-  formatLocaleDate,
+  formatLocalDate,
+  dayDifference,
+  isPastDate,
+  isFutureDate,
   isToday,
   addDays,
-  dayDiff,
-  isPast,
-  isFuture,
+  getDayName,
 };
