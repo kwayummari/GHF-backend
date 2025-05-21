@@ -63,4 +63,10 @@ BudgetExpense.associate = (models) => {
     as: 'budget',
   });
   
-  BudgetExpense.belongsTo(models.ExpenseReport,
+  BudgetExpense.belongsTo(models.ExpenseReport, {
+    foreignKey: 'expense_report_id',
+    as: 'expenseReport',
+  });
+};
+
+module.exports = BudgetExpense;
