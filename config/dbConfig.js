@@ -10,7 +10,7 @@ const sequelize = new Sequelize(
   {
     host: config.DB.HOST,
     port: config.DB.PORT,
-    dialect: config.DB.dialect,
+    dialect: config.DB.dialect || 'mysql',
     pool: config.DB.pool,
     logging: config.NODE_ENV === 'development' ? 
       (msg) => logger.debug(msg) : 
@@ -35,7 +35,6 @@ const testConnection = async () => {
   }
 };
 
-module.exports = {
-  sequelize,
-  testConnection,
-};
+module.exports = sequelize;
+
+module.exports.testConnection = testConnection;
