@@ -4,10 +4,10 @@ const path = require('path');
 const fs = require('fs');
 const config = require('../config/config');
 
-// Create log directory if it doesn't exist
-const logDir = path.join(process.cwd(), config.LOG.DIR);
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
+// Create logs directory if it doesn't exist
+const logsDir = path.join(process.cwd(), 'logs');
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir, { recursive: true });
 }
 
 // Define log format
@@ -18,52 +18,56 @@ const logFormat = winston.format.combine(
   winston.format.json()
 );
 
-// Create file transport for daily rotation
-const fileTransport = new DailyRotateFile({
-  filename: path.join(logDir, '%DATE%-app.log'),
-  datePattern: 'YYYY-MM-DD',
-  zippedArchive: true,
-  maxSize: '20m',
-  maxFiles: '14d',
-  level: config.NODE_ENV === 'development' ? 'debug' : 'info',
-});
+// Create console format
+const consoleFormat = winston.format.combine(
+  winston.format.colorize(),
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.printf(({ level, message, timestamp, stack }) => {
+    return `${timestamp} ${level}: ${message}${stack ? '\n' + stack : ''}`;
+  })
+);
 
-// Create error file transport
-const errorFileTransport = new DailyRotateFile({
-  filename: path.join(logDir, '%DATE%-error.log'),
-  datePattern: 'YYYY-MM-DD',
-  zippedArchive: true,
-  maxSize: '20m',
-  maxFiles: '14d',
-  level: 'error',
-});
+// Create transports
+const transports = [
+  // Console transport
+  new winston.transports.Console({
+    format: consoleFormat,
+    level: config.NODE_ENV === 'production' ? 'info' : 'debug',
+  }),
+  
+  // Rotate file for all logs
+  new DailyRotateFile({
+    filename: path.join(logsDir, '%DATE%-app.log'),
+    datePattern: 'YYYY-MM-DD',
+    zippedArchive: true,
+    maxSize: '20m',
+    maxFiles: '14d',
+    level: config.LOG_LEVEL,
+  }),
+  
+  // Rotate file for error logs
+  new DailyRotateFile({
+    filename: path.join(logsDir, '%DATE%-error.log'),
+    datePattern: 'YYYY-MM-DD',
+    zippedArchive: true,
+    maxSize: '20m',
+    maxFiles: '30d',
+    level: 'error',
+  }),
+];
 
-// Create console transport
-const consoleTransport = new winston.transports.Console({
-  format: winston.format.combine(
-    winston.format.colorize(),
-    winston.format.printf(
-      (info) => `${info.timestamp} ${info.level}: ${info.message}${info.stack ? '\n' + info.stack : ''}`
-    )
-  ),
-});
-
-// Create the logger
+// Create logger
 const logger = winston.createLogger({
-  level: config.LOG.LEVEL,
+  level: config.LOG_LEVEL,
   format: logFormat,
-  defaultMeta: { service: 'express-backend' },
-  transports: [
-    fileTransport,
-    errorFileTransport,
-    consoleTransport,
-  ],
+  defaultMeta: { service: 'ghf-hr-system' },
+  transports,
   exitOnError: false,
 });
 
-// Stream for Morgan
+// Create stream for Morgan
 logger.stream = {
-  write: (message) => logger.info(message.trim()),
+  write: message => logger.info(message.trim()),
 };
 
 module.exports = logger;
