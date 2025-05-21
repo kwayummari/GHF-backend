@@ -1,9 +1,9 @@
 const bcrypt = require('bcryptjs');
 
 /**
- * Hash a password using bcrypt
- * @param {string} password - The plain text password
- * @returns {Promise<string>} - The hashed password
+ * Hash a password
+ * @param {string} password - Plain text password
+ * @returns {Promise<string>} - Hashed password
  */
 const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(10);
@@ -11,13 +11,13 @@ const hashPassword = async (password) => {
 };
 
 /**
- * Compare a plain text password with a hashed password
- * @param {string} password - The plain text password
- * @param {string} hashedPassword - The hashed password
- * @returns {Promise<boolean>} - Whether the passwords match
+ * Compare a password with a hash
+ * @param {string} password - Plain text password
+ * @param {string} hash - Hashed password
+ * @returns {Promise<boolean>} - Whether the password matches
  */
-const comparePassword = async (password, hashedPassword) => {
-  return bcrypt.compare(password, hashedPassword);
+const comparePassword = async (password, hash) => {
+  return bcrypt.compare(password, hash);
 };
 
 module.exports = {
