@@ -1,6 +1,8 @@
 const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
-const config = require('./config');
 const User = require('../models/User');
+const Role = require('../models/Role');
+const Permission = require('../models/Permission');
+const config = require('./config');
 
 /**
  * Configure Passport with JWT strategy
@@ -11,25 +13,57 @@ const passportConfig = (passport) => {
     jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
     secretOrKey: config.JWT.SECRET,
   };
-  
+
   passport.use(
     new JwtStrategy(options, async (payload, done) => {
       try {
-        // Find user by ID from token payload
-        const user = await User.findByPk(payload.id, {
+        // Find user by ID with roles and permissions
+        const user = await User.findOne({
+          where: { id: payload.id },
+          include: [
+            {
+              model: Role,
+              as: 'roles',
+              through: { attributes: [] },
+              include: [
+                {
+                  model: Permission,
+                  as: 'permissions',
+                  through: { attributes: [] },
+                }
+              ]
+            }
+          ],
           attributes: { exclude: ['password'] },
         });
-        
+
         if (!user) {
           return done(null, false, { message: 'User not found' });
         }
-        
+
         // Check if user is active
-        if (!user.isActive) {
-          return done(null, false, { message: 'Account is deactivated' });
+        if (user.status !== 'active') {
+          return done(null, false, { message: 'Account is not active' });
         }
+
+        // Format user data
+        const userData = user.toJSON();
         
-        return done(null, user);
+        // Extract role names and permissions for easier access
+        userData.roles = userData.roles.map(role => role.role_name);
+        
+        const permissions = new Set();
+        userData.roles.forEach(roleName => {
+          const role = user.roles.find(r => r.role_name === roleName);
+          if (role && role.permissions) {
+            role.permissions.forEach(permission => {
+              permissions.add(`${permission.module}:${permission.action}`);
+            });
+          }
+        });
+        userData.permissions = Array.from(permissions);
+
+        return done(null, userData);
       } catch (error) {
         return done(error, false);
       }
