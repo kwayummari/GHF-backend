@@ -1,15 +1,17 @@
-/**
- * Auth Controller
- * Handles authentication-related operations
- */
 const { StatusCodes } = require('http-status-codes');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const UserRole = require('../models/UserRole');
+const Role = require('../models/Role');
+const Permission = require('../models/Permission');
+const RolePermission = require('../models/RolePermission');
 const { comparePassword } = require('../utils/hashUtils');
-const { generateToken, generateRefreshToken, verifyRefreshToken } = require('../utils/tokenUtils');
+const { generateToken, generateRefreshToken } = require('../utils/tokenUtils');
 const { successResponse, errorResponse } = require('../utils/responseUtils');
 const { sendEmail } = require('../services/mailer');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
+const config = require('../config/config');
 
 /**
  * Register a new user
@@ -19,44 +21,71 @@ const crypto = require('crypto');
  */
 const register = async (req, res, next) => {
   try {
-    const { username, email, password, firstName, lastName } = req.body;
+    const { 
+      first_name, 
+      middle_name, 
+      sur_name, 
+      email, 
+      phone_number, 
+      gender, 
+      password 
+    } = req.body;
     
     // Check if user already exists
     const existingUser = await User.findOne({
       where: {
-        [User.sequelize.Op.or]: [{ email }, { username }],
+        [User.sequelize.Op.or]: [{ email }, { phone_number }],
       },
     });
     
     if (existingUser) {
+      const field = existingUser.email === email ? 'email' : 'phone_number';
       return errorResponse(
         res,
         StatusCodes.CONFLICT,
         'User already exists',
-        [{ field: existingUser.email === email ? 'email' : 'username', message: 'Already in use' }]
+        [{ field, message: 'Already in use' }]
       );
     }
     
     // Create user
     const newUser = await User.create({
-      username,
+      first_name,
+      middle_name,
+      sur_name,
       email,
+      phone_number,
+      gender,
       password,
-      firstName,
-      lastName,
+      status: 'active'
     });
     
-    // Generate tokens
+    // Assign default employee role
+    const employeeRole = await Role.findOne({
+      where: { 
+        role_name: 'Employee',
+        is_default: true
+      }
+    });
+    
+    if (employeeRole) {
+      await UserRole.create({
+        user_id: newUser.id,
+        role_id: employeeRole.id
+      });
+    }
+    
+    // Generate token
     const token = generateToken({ id: newUser.id });
     
     // Send welcome email
     await sendEmail({
       to: email,
-      subject: 'Welcome to Our Platform',
+      subject: 'Welcome to GHF HR System',
       template: 'welcome',
       templateData: {
-        firstName,
-        username,
+        firstName: first_name,
+        fullName: `${first_name} ${sur_name}`,
       },
     });
     
@@ -86,8 +115,24 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     
-    // Find user
-    const user = await User.findOne({ where: { email } });
+    // Find user with roles
+    const user = await User.findOne({
+      where: { email },
+      include: [
+        {
+          model: Role,
+          as: 'roles',
+          through: { attributes: [] }, // Don't include junction table
+          include: [
+            {
+              model: Permission,
+              as: 'permissions',
+              through: { attributes: [] }, // Don't include junction table
+            }
+          ]
+        }
+      ]
+    });
     
     // Check if user exists
     if (!user) {
@@ -99,11 +144,11 @@ const login = async (req, res, next) => {
     }
     
     // Check if user is active
-    if (!user.isActive) {
+    if (user.status !== 'active') {
       return errorResponse(
         res,
         StatusCodes.FORBIDDEN,
-        'Account is deactivated'
+        `Account is ${user.status}`
       );
     }
     
@@ -119,10 +164,25 @@ const login = async (req, res, next) => {
     }
     
     // Update last login
-    await user.update({ lastLogin: new Date() });
+    await user.update({ last_login: new Date() });
+    
+    // Flatten permissions for easier access
+    const userRoles = user.roles.map(role => role.role_name);
+    const userPermissions = [];
+    
+    user.roles.forEach(role => {
+      role.permissions.forEach(permission => {
+        userPermissions.push(`${permission.module}:${permission.action}`);
+      });
+    });
     
     // Generate tokens
-    const token = generateToken({ id: user.id });
+    const token = generateToken({ 
+      id: user.id,
+      roles: userRoles,
+      permissions: userPermissions
+    });
+    
     const refreshToken = generateRefreshToken({ id: user.id });
     
     return successResponse(
@@ -130,13 +190,80 @@ const login = async (req, res, next) => {
       StatusCodes.OK,
       'Login successful',
       {
-        user: user.toJSON(),
+        user: {
+          ...user.toJSON(),
+          roles: userRoles,
+          permissions: userPermissions
+        },
         token,
         refreshToken,
       }
     );
   } catch (error) {
     logger.error('Login error:', error);
+    next(error);
+  }
+};
+
+/**
+ * Get authenticated user profile
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const getProfile = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    
+    // Find user with roles and permissions
+    const user = await User.findOne({
+      where: { id: userId },
+      include: [
+        {
+          model: Role,
+          as: 'roles',
+          through: { attributes: [] },
+          include: [
+            {
+              model: Permission,
+              as: 'permissions',
+              through: { attributes: [] },
+            }
+          ]
+        }
+      ]
+    });
+    
+    if (!user) {
+      return errorResponse(
+        res,
+        StatusCodes.NOT_FOUND,
+        'User not found'
+      );
+    }
+    
+    // Flatten permissions for easier access
+    const userRoles = user.roles.map(role => role.role_name);
+    const userPermissions = [];
+    
+    user.roles.forEach(role => {
+      role.permissions.forEach(permission => {
+        userPermissions.push(`${permission.module}:${permission.action}`);
+      });
+    });
+    
+    return successResponse(
+      res,
+      StatusCodes.OK,
+      'User profile retrieved successfully',
+      {
+        ...user.toJSON(),
+        roles: userRoles,
+        permissions: userPermissions
+      }
+    );
+  } catch (error) {
+    logger.error('Get profile error:', error);
     next(error);
   }
 };
@@ -160,13 +287,10 @@ const refreshToken = async (req, res, next) => {
     }
     
     // Verify refresh token
-    const decoded = verifyRefreshToken(refreshToken);
-    const userId = decoded.id;
-    
-    // Find user
-    const user = await User.findByPk(userId);
-    
-    if (!user || !user.isActive) {
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, config.JWT.REFRESH_SECRET);
+    } catch (error) {
       return errorResponse(
         res,
         StatusCodes.UNAUTHORIZED,
@@ -174,8 +298,52 @@ const refreshToken = async (req, res, next) => {
       );
     }
     
+    const userId = decoded.id;
+    
+    // Find user with roles
+    const user = await User.findOne({
+      where: { id: userId },
+      include: [
+        {
+          model: Role,
+          as: 'roles',
+          through: { attributes: [] },
+          include: [
+            {
+              model: Permission,
+              as: 'permissions',
+              through: { attributes: [] },
+            }
+          ]
+        }
+      ]
+    });
+    
+    if (!user || user.status !== 'active') {
+      return errorResponse(
+        res,
+        StatusCodes.UNAUTHORIZED,
+        'Invalid refresh token'
+      );
+    }
+    
+    // Flatten permissions for easier access
+    const userRoles = user.roles.map(role => role.role_name);
+    const userPermissions = [];
+    
+    user.roles.forEach(role => {
+      role.permissions.forEach(permission => {
+        userPermissions.push(`${permission.module}:${permission.action}`);
+      });
+    });
+    
     // Generate new tokens
-    const newToken = generateToken({ id: user.id });
+    const token = generateToken({ 
+      id: user.id,
+      roles: userRoles,
+      permissions: userPermissions
+    });
+    
     const newRefreshToken = generateRefreshToken({ id: user.id });
     
     return successResponse(
@@ -183,7 +351,7 @@ const refreshToken = async (req, res, next) => {
       StatusCodes.OK,
       'Token refreshed successfully',
       {
-        token: newToken,
+        token,
         refreshToken: newRefreshToken,
       }
     );
@@ -194,156 +362,6 @@ const refreshToken = async (req, res, next) => {
       StatusCodes.UNAUTHORIZED,
       'Invalid refresh token'
     );
-  }
-};
-
-/**
- * Forgot password
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
-const forgotPassword = async (req, res, next) => {
-  try {
-    const { email } = req.body;
-    
-    // Find user
-    const user = await User.findOne({ where: { email } });
-    
-    if (!user) {
-      return successResponse(
-        res,
-        StatusCodes.OK,
-        'If an account with that email exists, a password reset link has been sent'
-      );
-    }
-    
-    // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
-    
-    // For this example, we'll assume there's a PasswordReset model
-    // In a real implementation, you would need to create this model
-    const PasswordReset = require('../models/PasswordReset');
-    await PasswordReset.create({
-      userId: user.id,
-      token: hashedToken,
-      expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
-    });
-    
-    // Send reset email
-    const resetUrl = `https://yourapp.com/reset-password?token=${resetToken}`;
-    
-    await sendEmail({
-      to: user.email,
-      subject: 'Password Reset',
-      template: 'password-reset',
-      templateData: {
-        firstName: user.firstName,
-        resetUrl,
-      },
-    });
-    
-    return successResponse(
-      res,
-      StatusCodes.OK,
-      'If an account with that email exists, a password reset link has been sent'
-    );
-  } catch (error) {
-    logger.error('Forgot password error:', error);
-    next(error);
-  }
-};
-
-/**
- * Reset password
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
-const resetPassword = async (req, res, next) => {
-  try {
-    const { token, password } = req.body;
-    
-    // Hash the token from the request
-    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-    
-    // For this example, we'll assume there's a PasswordReset model
-    const PasswordReset = require('../models/PasswordReset');
-    
-    // Find valid reset request
-    const resetRequest = await PasswordReset.findOne({
-      where: {
-        token: hashedToken,
-        expiresAt: {
-          [User.sequelize.Op.gt]: new Date(),
-        },
-      },
-    });
-    
-    if (!resetRequest) {
-      return errorResponse(
-        res,
-        StatusCodes.BAD_REQUEST,
-        'Invalid or expired token'
-      );
-    }
-    
-    // Find user
-    const user = await User.findByPk(resetRequest.userId);
-    
-    if (!user) {
-      return errorResponse(
-        res,
-        StatusCodes.BAD_REQUEST,
-        'User not found'
-      );
-    }
-    
-    // Update password
-    await user.update({ password });
-    
-    // Delete reset request
-    await resetRequest.destroy();
-    
-    // Send confirmation email
-    await sendEmail({
-      to: user.email,
-      subject: 'Password Changed',
-      template: 'password-changed',
-      templateData: {
-        firstName: user.firstName,
-      },
-    });
-    
-    return successResponse(
-      res,
-      StatusCodes.OK,
-      'Password reset successful'
-    );
-  } catch (error) {
-    logger.error('Reset password error:', error);
-    next(error);
-  }
-};
-
-/**
- * Get authenticated user
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
-const getMe = async (req, res, next) => {
-  try {
-    return successResponse(
-      res,
-      StatusCodes.OK,
-      'User retrieved successfully',
-      req.user
-    );
-  } catch (error) {
-    logger.error('Get me error:', error);
-    next(error);
   }
 };
 
@@ -381,7 +399,7 @@ const changePassword = async (req, res, next) => {
       subject: 'Password Changed',
       template: 'password-changed',
       templateData: {
-        firstName: user.firstName,
+        firstName: user.first_name,
       },
     });
     
@@ -396,13 +414,10 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-// Export all controller functions
 module.exports = {
   register,
   login,
+  getProfile,
   refreshToken,
-  forgotPassword,
-  resetPassword,
-  getMe,
-  changePassword
+  changePassword,
 };
