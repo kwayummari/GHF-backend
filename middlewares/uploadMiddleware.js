@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { StatusCodes } = require('http-status-codes');
+const logger = require('../utils/logger');
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -52,17 +53,19 @@ const limits = {
 };
 
 // Create multer upload instance
-const upload = multer({
+const multerInstance = multer({
   storage,
   fileFilter,
   limits,
-}).single('file');
+});
 
-// Error handling wrapper
+// Error handling wrapper middleware
 const uploadMiddleware = (req, res, next) => {
-  upload(req, res, (err) => {
+  multerInstance.single('file')(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       // Multer error
+      logger.error(`Multer error during file upload: ${err.message}`);
+      
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(StatusCodes.BAD_REQUEST).json({
           success: false,
@@ -78,6 +81,8 @@ const uploadMiddleware = (req, res, next) => {
       });
     } else if (err) {
       // Other error
+      logger.error(`Error during file upload: ${err.message}`);
+      
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
         message: err.message,
@@ -85,14 +90,66 @@ const uploadMiddleware = (req, res, next) => {
       });
     }
     
+    // If no file was uploaded and it's required
+    if (!req.file) {
+      logger.warn('File upload attempted but no file was received');
+      
+      // We don't return an error here because the controller should handle this case
+      // Some routes might make the file optional, so we let the controller decide
+    } else {
+      logger.info(`File uploaded successfully: ${req.file.originalname} (${req.file.size} bytes)`);
+    }
+    
     next();
   });
 };
 
+// Create folder for document uploads
+const documentsDir = path.join(uploadsDir, 'documents');
+if (!fs.existsSync(documentsDir)) {
+  fs.mkdirSync(documentsDir, { recursive: true });
+}
+
+// Create folder for profile photos
+const profilesDir = path.join(uploadsDir, 'profiles');
+if (!fs.existsSync(profilesDir)) {
+  fs.mkdirSync(profilesDir, { recursive: true });
+}
+
+// Helper functions for the controller
+const getFileUrl = (filename, subdir = '') => {
+  const relativePath = path.join('uploads', subdir, filename);
+  return `/${relativePath.replace(/\\/g, '/')}`;
+};
+
+const getFilePath = (filename, subdir = '') => {
+  return path.join(process.cwd(), 'uploads', subdir, filename);
+};
+
+const deleteFile = (filePath) => {
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      logger.info(`File deleted: ${filePath}`);
+      return true;
+    }
+    logger.warn(`File not found for deletion: ${filePath}`);
+    return false;
+  } catch (error) {
+    logger.error(`Error deleting file ${filePath}: ${error.message}`);
+    return false;
+  }
+};
+
 module.exports = {
   upload: uploadMiddleware,
+  getFileUrl,
+  getFilePath,
+  deleteFile,
   storage,
   fileFilter,
   limits,
-  uploadDir: uploadsDir,
+  uploadsDir,
+  documentsDir,
+  profilesDir,
 };

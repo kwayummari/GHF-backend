@@ -1,7 +1,7 @@
 const express = require('express');
 const documentController = require('../controllers/documentController');
 const { authenticate, authorize } = require('../middlewares/authMiddleware');
-const upload = require('../middlewares/uploadMiddleware');
+const multerUpload = require('../middlewares/uploadMiddleware');
 const validateRequest = require('../middlewares/validateRequest');
 const { documentUpdateValidator } = require('../validators/documentValidator');
 
@@ -52,7 +52,7 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.post('/upload', authenticate, upload.single('file'), documentController.uploadDocument);
+router.post('/upload', authenticate, multerUpload.upload, documentController.uploadDocument);
 
 /**
  * @swagger
