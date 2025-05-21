@@ -3,7 +3,11 @@ const logger = require('../utils/logger');
 const config = require('../config/config');
 
 /**
- * Global error handler middleware for Express
+ * Global error handler middleware
+ * @param {Error} err - Error object
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware
  */
 const errorHandler = (err, req, res, next) => {
   // Log the error
@@ -12,40 +16,58 @@ const errorHandler = (err, req, res, next) => {
     path: req.path,
     method: req.method,
     ip: req.ip,
-    user: req.user ? req.user.id : 'unauthenticated',
   });
 
-  // Handle different types of errors
+  // Default error status code and message
   let statusCode = err.statusCode || StatusCodes.INTERNAL_SERVER_ERROR;
   let message = err.message || 'Internal server error';
   let errors = err.errors || null;
 
-  // Special cases for common errors
-  if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeUniqueConstraintError') {
-    statusCode = StatusCodes.BAD_REQUEST;
-    message = 'Validation error';
-    errors = err.errors.map(e => ({
-      field: e.path,
-      message: e.message,
-    }));
-  } else if (err.name === 'JsonWebTokenError') {
-    statusCode = StatusCodes.UNAUTHORIZED;
-    message = 'Invalid token';
-  } else if (err.name === 'TokenExpiredError') {
-    statusCode = StatusCodes.UNAUTHORIZED;
-    message = 'Token expired';
+  // Handle specific error types
+  switch (err.name) {
+    case 'SequelizeValidationError':
+    case 'SequelizeUniqueConstraintError':
+      statusCode = StatusCodes.BAD_REQUEST;
+      message = 'Validation error';
+      errors = err.errors.map(e => ({
+        field: e.path,
+        message: e.message,
+      }));
+      break;
+    case 'JsonWebTokenError':
+      statusCode = StatusCodes.UNAUTHORIZED;
+      message = 'Invalid token';
+      break;
+    case 'TokenExpiredError':
+      statusCode = StatusCodes.UNAUTHORIZED;
+      message = 'Token expired';
+      break;
+    case 'SequelizeDatabaseError':
+      statusCode = StatusCodes.INTERNAL_SERVER_ERROR;
+      message = 'Database error';
+      break;
+    case 'SyntaxError':
+      if (err.message.includes('JSON')) {
+        statusCode = StatusCodes.BAD_REQUEST;
+        message = 'Invalid JSON';
+      }
+      break;
   }
 
-  // Format the response
+  // Create error response
   const errorResponse = {
     success: false,
     message,
-    ...(errors && { errors }),
-    ...(config.NODE_ENV === 'development' && { stack: err.stack }),
+    errors,
   };
 
-  // Send the response
-  res.status(statusCode).json(errorResponse);
+  // Include stack trace in development
+  if (config.NODE_ENV === 'development') {
+    errorResponse.stack = err.stack;
+  }
+
+  // Send response
+  return res.status(statusCode).json(errorResponse);
 };
 
 module.exports = errorHandler;
