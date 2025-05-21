@@ -1,7 +1,3 @@
-```
-
-## models/BudgetExpense.js
-```javascript
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/dbConfig');
 
