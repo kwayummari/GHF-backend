@@ -43,10 +43,7 @@ const swaggerDefinition = {
 // Options for the swagger docs
 const options = {
   swaggerDefinition,
-  // Paths to files containing OpenAPI definitions
   apis: ['./routes/*.js'],
-  persistAuthorization: true,
-  url: `http://185.172.57.203:${config.PORT}/api-docs.json`,
 };
 
 // Initialize swagger-jsdoc
@@ -57,12 +54,41 @@ const swaggerSpec = swaggerJsdoc(options);
  * @param {Object} app - Express app
  */
 const setupSwagger = (app) => {
+  // Disable security headers for swagger routes
+  app.use('/api-docs', (req, res, next) => {
+    // Remove security headers that might force HTTPS
+    res.removeHeader('Strict-Transport-Security');
+    res.removeHeader('Content-Security-Policy');
+    res.setHeader('Content-Security-Policy', "default-src 'self' 'unsafe-inline' 'unsafe-eval' http: data:;");
+    next();
+  });
+
+  // Custom Swagger options to force HTTP
+  const swaggerOptions = {
+    customCss: `
+      .swagger-ui .topbar { display: none }
+      .swagger-ui .scheme-container { display: none }
+    `,
+    customSiteTitle: "GHF HR System API",
+    swaggerOptions: {
+      persistAuthorization: true,
+      url: `http://185.172.57.203:${config.PORT}/api-docs.json`,
+      urls: [
+        {
+          url: `http://185.172.57.203:${config.PORT}/api-docs.json`,
+          name: 'Production'
+        }
+      ]
+    }
+  };
+
   // Serve swagger docs
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerOptions));
 
   // Serve swagger spec as JSON
   app.get('/api-docs.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');
+    res.removeHeader('Strict-Transport-Security');
     res.send(swaggerSpec);
   });
 };
