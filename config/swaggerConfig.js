@@ -45,6 +45,8 @@ const options = {
   swaggerDefinition,
   // Paths to files containing OpenAPI definitions
   apis: ['./routes/*.js'],
+  persistAuthorization: true,
+  url: `http://185.172.57.203:${config.PORT}/api-docs.json`,
 };
 
 // Initialize swagger-jsdoc
