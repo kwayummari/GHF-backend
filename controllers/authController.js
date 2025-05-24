@@ -1,4 +1,5 @@
 const { StatusCodes } = require('http-status-codes');
+const { Op } = require('sequelize'); // Import Op directly from sequelize
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const UserRole = require('../models/UserRole');
@@ -31,10 +32,10 @@ const register = async (req, res, next) => {
       password 
     } = req.body;
     
-    // Check if user already exists
+    // Check if user already exists - Fixed the Op usage
     const existingUser = await User.findOne({
       where: {
-        [User.sequelize.Op.or]: [{ email }, { phone_number }],
+        [Op.or]: [{ email }, { phone_number }],
       },
     });
     
@@ -78,16 +79,21 @@ const register = async (req, res, next) => {
     // Generate token
     const token = generateToken({ id: newUser.id });
     
-    // Send welcome email
-    await sendEmail({
-      to: email,
-      subject: 'Welcome to GHF HR System',
-      template: 'welcome',
-      templateData: {
-        firstName: first_name,
-        fullName: `${first_name} ${sur_name}`,
-      },
-    });
+    // Send welcome email (optional - comment out if email service isn't configured)
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Welcome to GHF HR System',
+        template: 'welcome',
+        templateData: {
+          firstName: first_name,
+          fullName: `${first_name} ${sur_name}`,
+        },
+      });
+    } catch (emailError) {
+      logger.warn('Failed to send welcome email:', emailError.message);
+      // Don't fail registration if email fails
+    }
     
     // Return response
     return successResponse(
@@ -167,14 +173,18 @@ const login = async (req, res, next) => {
     await user.update({ last_login: new Date() });
     
     // Flatten permissions for easier access
-    const userRoles = user.roles.map(role => role.role_name);
+    const userRoles = user.roles ? user.roles.map(role => role.role_name) : [];
     const userPermissions = [];
     
-    user.roles.forEach(role => {
-      role.permissions.forEach(permission => {
-        userPermissions.push(`${permission.module}:${permission.action}`);
+    if (user.roles) {
+      user.roles.forEach(role => {
+        if (role.permissions) {
+          role.permissions.forEach(permission => {
+            userPermissions.push(`${permission.module}:${permission.action}`);
+          });
+        }
       });
-    });
+    }
     
     // Generate tokens
     const token = generateToken({ 
@@ -243,14 +253,18 @@ const getProfile = async (req, res, next) => {
     }
     
     // Flatten permissions for easier access
-    const userRoles = user.roles.map(role => role.role_name);
+    const userRoles = user.roles ? user.roles.map(role => role.role_name) : [];
     const userPermissions = [];
     
-    user.roles.forEach(role => {
-      role.permissions.forEach(permission => {
-        userPermissions.push(`${permission.module}:${permission.action}`);
+    if (user.roles) {
+      user.roles.forEach(role => {
+        if (role.permissions) {
+          role.permissions.forEach(permission => {
+            userPermissions.push(`${permission.module}:${permission.action}`);
+          });
+        }
       });
-    });
+    }
     
     return successResponse(
       res,
@@ -328,14 +342,18 @@ const refreshToken = async (req, res, next) => {
     }
     
     // Flatten permissions for easier access
-    const userRoles = user.roles.map(role => role.role_name);
+    const userRoles = user.roles ? user.roles.map(role => role.role_name) : [];
     const userPermissions = [];
     
-    user.roles.forEach(role => {
-      role.permissions.forEach(permission => {
-        userPermissions.push(`${permission.module}:${permission.action}`);
+    if (user.roles) {
+      user.roles.forEach(role => {
+        if (role.permissions) {
+          role.permissions.forEach(permission => {
+            userPermissions.push(`${permission.module}:${permission.action}`);
+          });
+        }
       });
-    });
+    }
     
     // Generate new tokens
     const token = generateToken({ 
@@ -393,15 +411,20 @@ const changePassword = async (req, res, next) => {
     // Update password
     await user.update({ password: newPassword });
     
-    // Send confirmation email
-    await sendEmail({
-      to: user.email,
-      subject: 'Password Changed',
-      template: 'password-changed',
-      templateData: {
-        firstName: user.first_name,
-      },
-    });
+    // Send confirmation email (optional - comment out if email service isn't configured)
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: 'Password Changed',
+        template: 'password-changed',
+        templateData: {
+          firstName: user.first_name,
+        },
+      });
+    } catch (emailError) {
+      logger.warn('Failed to send password change confirmation email:', emailError.message);
+      // Don't fail the password change if email fails
+    }
     
     return successResponse(
       res,
