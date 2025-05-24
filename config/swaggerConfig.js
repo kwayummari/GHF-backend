@@ -16,11 +16,11 @@ const swaggerDefinition = {
   },
   servers: [
     {
-      url: `http://185.172.57.203:${config.PORT}/api/${config.API_VERSION}`,
+      url: `http://185.172.57.203:${config.PORT}`,
       description: 'Production server',
     },
     {
-      url: `http://localhost:${config.PORT}/api/${config.API_VERSION}`,
+      url: `http://localhost:${config.PORT}`,
       description: 'Development server',
     },
   ],
