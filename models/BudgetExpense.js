@@ -53,7 +53,7 @@ const BudgetExpense = sequelize.define('BudgetExpense', {
   timestamps: true,
   underscored: true,
   createdAt: 'created_at',
-  updatedAt: null,
+  updatedAt: 'updated_at',
 });
 
 // Model associations
