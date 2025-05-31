@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * LeaveApplication model
@@ -115,17 +115,17 @@ LeaveApplication.associate = (models) => {
     foreignKey: 'user_id',
     as: 'user',
   });
-  
+
   LeaveApplication.belongsTo(models.LeaveType, {
     foreignKey: 'type_id',
     as: 'leaveType',
   });
-  
+
   LeaveApplication.belongsTo(models.User, {
     foreignKey: 'approver_id',
     as: 'approver',
   });
-  
+
   LeaveApplication.belongsTo(models.Document, {
     foreignKey: 'attachment_id',
     as: 'attachment',

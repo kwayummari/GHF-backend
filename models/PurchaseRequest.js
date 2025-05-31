@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * PurchaseRequest model
@@ -96,12 +96,12 @@ PurchaseRequest.associate = (models) => {
     foreignKey: 'budget_id',
     as: 'budget',
   });
-  
+
   PurchaseRequest.belongsTo(models.User, {
     foreignKey: 'requester_id',
     as: 'requester',
   });
-  
+
   PurchaseRequest.belongsTo(models.User, {
     foreignKey: 'approved_by',
     as: 'approver',

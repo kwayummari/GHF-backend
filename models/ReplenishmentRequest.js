@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * ReplenishmentRequest model
@@ -97,12 +97,12 @@ ReplenishmentRequest.associate = (models) => {
     foreignKey: 'petty_cash_book_id',
     as: 'pettyCashBook',
   });
-  
+
   ReplenishmentRequest.belongsTo(models.User, {
     foreignKey: 'requested_by',
     as: 'requester',
   });
-  
+
   ReplenishmentRequest.belongsTo(models.User, {
     foreignKey: 'approved_by',
     as: 'approver',

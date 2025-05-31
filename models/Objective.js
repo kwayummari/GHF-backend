@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * Objective model
@@ -85,12 +85,12 @@ Objective.associate = (models) => {
     foreignKey: 'user_id',
     as: 'user',
   });
-  
+
   Objective.belongsTo(models.FiscalYear, {
     foreignKey: 'fiscal_year_id',
     as: 'fiscalYear',
   });
-  
+
   Objective.hasMany(models.AppraisalForm, {
     foreignKey: 'objective_id',
     as: 'appraisalForms',

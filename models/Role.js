@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * Role model
@@ -54,7 +54,7 @@ Role.associate = (models) => {
     otherKey: 'user_id',
     as: 'users',
   });
-  
+
   Role.belongsToMany(models.Permission, {
     through: models.RolePermission,
     foreignKey: 'role_id',

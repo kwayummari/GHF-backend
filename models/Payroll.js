@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * Payroll model
@@ -127,17 +127,17 @@ Payroll.associate = (models) => {
     foreignKey: 'user_id',
     as: 'user',
   });
-  
+
   Payroll.belongsTo(models.Increment, {
     foreignKey: 'increment_id',
     as: 'increment',
   });
-  
+
   Payroll.belongsTo(models.User, {
     foreignKey: 'processed_by',
     as: 'processor',
   });
-  
+
   Payroll.belongsTo(models.User, {
     foreignKey: 'approved_by',
     as: 'approver',

@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const {sequelize} = require('../config/dbConfig');
 
 /**
  * BudgetExpense model - Junction table linking budgets to expense reports

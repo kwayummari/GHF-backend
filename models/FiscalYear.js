@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * FiscalYear model
@@ -75,17 +75,17 @@ FiscalYear.associate = (models) => {
     foreignKey: 'created_by',
     as: 'creator',
   });
-  
+
   FiscalYear.hasMany(models.Quarter, {
     foreignKey: 'fiscal_year_id',
     as: 'quarters',
   });
-  
+
   FiscalYear.hasMany(models.Objective, {
     foreignKey: 'fiscal_year_id',
     as: 'objectives',
   });
-  
+
   FiscalYear.hasMany(models.Increment, {
     foreignKey: 'fiscal_year_id',
     as: 'increments',

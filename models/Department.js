@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * Department model
@@ -50,7 +50,7 @@ Department.associate = (models) => {
     foreignKey: 'department_id',
     as: 'employees',
   });
-  
+
   Department.hasMany(models.Budget, {
     foreignKey: 'department_id',
     as: 'budgets',

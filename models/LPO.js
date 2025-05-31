@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * LPO (Local Purchase Order) model
@@ -127,22 +127,22 @@ LPO.associate = (models) => {
     foreignKey: 'supplier_id',
     as: 'supplier',
   });
-  
+
   LPO.belongsTo(models.Document, {
     foreignKey: 'invoice_document_id',
     as: 'invoiceDocument',
   });
-  
+
   LPO.belongsTo(models.Document, {
     foreignKey: 'delivery_note_document_id',
     as: 'deliveryNoteDocument',
   });
-  
+
   LPO.belongsTo(models.User, {
     foreignKey: 'created_by',
     as: 'creator',
   });
-  
+
   LPO.belongsTo(models.User, {
     foreignKey: 'approved_by',
     as: 'approver',

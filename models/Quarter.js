@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * Quarter model
@@ -67,7 +67,7 @@ Quarter.associate = (models) => {
     foreignKey: 'fiscal_year_id',
     as: 'fiscalYear',
   });
-  
+
   Quarter.hasMany(models.Budget, {
     foreignKey: 'quarter_id',
     as: 'budgets',

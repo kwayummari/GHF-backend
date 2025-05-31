@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * Supplier model
@@ -94,7 +94,7 @@ Supplier.associate = (models) => {
     foreignKey: 'supplier_id',
     as: 'purchaseOrders',
   });
-  
+
   Supplier.hasMany(models.Quotation, {
     foreignKey: 'supplier_id',
     as: 'quotations',

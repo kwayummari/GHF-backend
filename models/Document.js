@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * Document model
@@ -96,12 +96,12 @@ Document.associate = (models) => {
     foreignKey: 'user_id',
     as: 'owner',
   });
-  
+
   Document.belongsTo(models.User, {
     foreignKey: 'uploaded_by',
     as: 'uploader',
   });
-  
+
   Document.hasMany(models.LeaveApplication, {
     foreignKey: 'attachment_id',
     as: 'leaveApplications',

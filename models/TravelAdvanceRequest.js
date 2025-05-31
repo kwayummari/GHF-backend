@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * TravelAdvanceRequest model
@@ -117,22 +117,22 @@ TravelAdvanceRequest.associate = (models) => {
     foreignKey: 'user_id',
     as: 'user',
   });
-  
+
   TravelAdvanceRequest.belongsTo(models.Document, {
     foreignKey: 'document_id',
     as: 'document',
   });
-  
+
   TravelAdvanceRequest.belongsTo(models.FlatRate, {
     foreignKey: 'flat_rate_id',
     as: 'flatRate',
   });
-  
+
   TravelAdvanceRequest.belongsTo(models.User, {
     foreignKey: 'approved_by',
     as: 'approver',
   });
-  
+
   TravelAdvanceRequest.hasMany(models.ExpenseReport, {
     foreignKey: 'travel_advance_request_id',
     as: 'expenseReports',
