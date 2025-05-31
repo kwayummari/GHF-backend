@@ -6,8 +6,7 @@ const passport = require('passport');
 const path = require('path');
 const { StatusCodes } = require('http-status-codes');
 const config = require('./config/config');
-const sequelize = require('./config/dbConfig');
-const testConnection = require('./config/dbConfig').testConnection;
+const models = require('./models');
 const passportConfig = require('./config/passportConfig');
 const setupSwagger = require('./config/swaggerConfig');
 const errorHandler = require('./middlewares/errorHandler');
@@ -63,15 +62,25 @@ const PORT = config.PORT;
 
 // Only start server if database connection is successful
 const startServer = async () => {
-  const dbConnected = await testConnection();
-  
-  if (dbConnected) {
+  try {
+    // Test database connection
+    const dbConnected = await models.testConnection();
+
+    if (!dbConnected) {
+      logger.error('Failed to connect to database. Server not started.');
+      process.exit(1);
+    }
+
+    // Sync database models (this ensures associations are set up)
+    await models.sequelize.sync({ alter: config.NODE_ENV === 'development' });
+    logger.info('Database models synchronized');
+
     app.listen(PORT, () => {
       logger.info(`Server running in ${config.NODE_ENV} mode on port ${PORT}`);
       logger.info(`API Documentation: http://localhost:${PORT}/api-docs`);
     });
-  } else {
-    logger.error('Failed to connect to database. Server not started.');
+  } catch (error) {
+    logger.error('Failed to start server:', error);
     process.exit(1);
   }
 };

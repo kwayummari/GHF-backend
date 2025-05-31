@@ -1,5 +1,5 @@
-const Sequelize = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const {Sequelize} = require('sequelize');
+const {sequelize} = require('../config/dbConfig');
 const logger = require('../utils/logger');
 
 // Import all models

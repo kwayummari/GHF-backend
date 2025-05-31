@@ -2,6 +2,7 @@ const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
 const User = require('../models/User');
 const Role = require('../models/Role');
 const Permission = require('../models/Permission');
+const models = require('../models');
 const config = require('./config');
 
 /**
@@ -18,16 +19,16 @@ const passportConfig = (passport) => {
     new JwtStrategy(options, async (payload, done) => {
       try {
         // Find user by ID with roles and permissions
-        const user = await User.findOne({
+        const user = await models.User.findOne({
           where: { id: payload.id },
           include: [
             {
-              model: Role,
+              model: models.Role,
               as: 'roles',
               through: { attributes: [] },
               include: [
                 {
-                  model: Permission,
+                  model: models.Permission,
                   as: 'permissions',
                   through: { attributes: [] },
                 }
@@ -48,14 +49,13 @@ const passportConfig = (passport) => {
 
         // Format user data
         const userData = user.toJSON();
-        
+
         // Extract role names and permissions for easier access
         userData.roles = userData.roles.map(role => role.role_name);
-        
+
         const permissions = new Set();
-        userData.roles.forEach(roleName => {
-          const role = user.roles.find(r => r.role_name === roleName);
-          if (role && role.permissions) {
+        user.roles.forEach(role => {
+          if (role.permissions) {
             role.permissions.forEach(permission => {
               permissions.add(`${permission.module}:${permission.action}`);
             });
