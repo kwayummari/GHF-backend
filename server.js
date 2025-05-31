@@ -72,7 +72,7 @@ const startServer = async () => {
     }
 
     // Sync database models (this ensures associations are set up)
-    await models.sequelize.sync({ alter: config.NODE_ENV === 'development' });
+    await models.sequelize.sync({ alter: false });
     logger.info('Database models synchronized');
 
     app.listen(PORT, () => {
