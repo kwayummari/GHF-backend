@@ -76,7 +76,7 @@ const Notification = sequelize.define('Notification', {
   timestamps: true,
   underscored: true,
   createdAt: 'created_at',
-  updatedAt: null,
+  updatedAt: 'updated_at',
 });
 
 // Model associations
