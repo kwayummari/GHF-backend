@@ -64,7 +64,7 @@ const Increment = sequelize.define('Increment', {
   timestamps: true,
   underscored: true,
   createdAt: 'created_at',
-  updatedAt: null,
+  updatedAt: 'updated_at',
 });
 
 // Model associations
