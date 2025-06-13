@@ -44,6 +44,9 @@ const AppraisalForm = require('./AppraisalForm');
 const Increment = require('./Increment');
 const Payroll = require('./Payroll');
 const SalaryComponent = require('./SalaryComponent');
+const Menu = require('./Menu');
+const MenuPermission = require('./MenuPermission');
+const RoleMenuAccess = require('./RoleMenuAccess');
 
 // Initialize models object with all models
 const models = {
@@ -87,7 +90,10 @@ const models = {
   AppraisalForm,
   Increment,
   Payroll,
-  SalaryComponent
+  SalaryComponent,
+  Menu,
+  MenuPermission,
+  RoleMenuAccess
 };
 
 // Associate models

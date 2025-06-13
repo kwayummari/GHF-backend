@@ -14,6 +14,7 @@ const morganLogger = require('./middlewares/morganLogger');
 const errorHandler = require('./middlewares/errorHandler');
 const rateLimiter = require('./middlewares/rateLimiter');
 const routes = require('./routes');
+const { authenticateAndAuthorize } = require('./middlewares/combinedAuthMiddleware');
 
 // Initialize Express app
 const app = express();
@@ -39,6 +40,9 @@ passportConfig(passport);
 
 // API Documentation
 swaggerConfig(app);
+
+// Apply automatic authentication and authorization to all API routes
+app.use('/api', authenticateAndAuthorize);
 
 // Mount routes
 app.use(`/api/${config.API_VERSION}`, routes);

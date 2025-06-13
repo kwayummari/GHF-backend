@@ -7,6 +7,7 @@ const UserRole = require('../models/UserRole');
 const { successResponse, errorResponse } = require('../utils/responseUtils');
 const logger = require('../utils/logger');
 const { Op } = require('sequelize');
+const { updateAllUserPermissions } = require('../utils/permissionUpdater');
 
 /**
  * Get all roles
@@ -113,6 +114,8 @@ const createRole = async (req, res, next) => {
           }
         ]
       });
+
+      updateAllUserPermissions();
       
       return successResponse(
         res,
@@ -279,6 +282,8 @@ const updateRole = async (req, res, next) => {
           }
         ]
       });
+
+      updateAllUserPermissions();
       
       return successResponse(
         res,
@@ -480,6 +485,9 @@ const assignRoleToUser = async (req, res, next) => {
         }
       ]
     });
+
+    const { updateUserPermissions } = require('../utils/permissionUpdater');
+    updateUserPermissions(user_id);
     
     return successResponse(
       res,
