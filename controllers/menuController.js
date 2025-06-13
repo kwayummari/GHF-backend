@@ -17,6 +17,17 @@ const logger = require('../utils/logger');
  */
 const getUserMenus = async (req, res, next) => {
     try {
+        // Add validation for req.user
+        if (!req.user || !req.user.id) {
+            console.log(req.user);
+            return errorResponse(
+                res,
+                StatusCodes.UNAUTHORIZED,
+                'User not authenticated',
+                [{ field: 'user', message: 'User authentication required' }]
+            );
+        }
+
         const userId = req.user.id;
 
         // Get user's roles
@@ -42,6 +53,7 @@ const getUserMenus = async (req, res, next) => {
             );
         }
 
+        // Rest of the function remains the same...
         // Get user's permissions through roles
         const userPermissions = await Permission.findAll({
             include: [
