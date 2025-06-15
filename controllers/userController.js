@@ -246,11 +246,13 @@ const updateUser = async (req, res, next) => {
       phone_number, 
       gender, 
       status,
-      basic_employee_data,
-      bio_data,
-      personal_employee_data,
+      basicEmployeeData,
+      bioData,
+      personalEmployeeData,
       roles
     } = req.body;
+
+    console.log(first_name, middle_name, sur_name, email, phone_number, gender, status, basicEmployeeData,bioData,personalEmployeeData,roles);
     
     // Find the user
     const user = await User.findByPk(id);
@@ -279,52 +281,52 @@ const updateUser = async (req, res, next) => {
       }, { transaction });
       
       // Update/create basic employee data if provided
-      if (basic_employee_data) {
+      if (basicEmployeeData) {
         let employeeData = await BasicEmployeeData.findOne({ 
           where: { user_id: id },
           transaction
         });
         
         if (employeeData) {
-          await employeeData.update(basic_employee_data, { transaction });
+          await employeeData.update(basicEmployeeData, { transaction });
         } else {
           await BasicEmployeeData.create({
             user_id: id,
-            ...basic_employee_data
+            ...basicEmployeeData
           }, { transaction });
         }
       }
       
       // Update/create bio data if provided
-      if (bio_data) {
+      if (bioData) {
         let existingBioData = await BioData.findOne({ 
           where: { user_id: id },
           transaction
         });
         
         if (existingBioData) {
-          await existingBioData.update(bio_data, { transaction });
+          await existingBioData.update(bioData, { transaction });
         } else {
           await BioData.create({
             user_id: id,
-            ...bio_data
+            ...bioData
           }, { transaction });
         }
       }
       
       // Update/create personal employee data if provided
-      if (personal_employee_data) {
+      if (personalEmployeeData) {
         let personalData = await PersonalEmployeeData.findOne({ 
           where: { user_id: id },
           transaction
         });
         
         if (personalData) {
-          await personalData.update(personal_employee_data, { transaction });
+          await personalData.update(personalEmployeeData, { transaction });
         } else {
           await PersonalEmployeeData.create({
             user_id: id,
-            ...personal_employee_data
+            ...personalEmployeeData
           }, { transaction });
         }
       }
