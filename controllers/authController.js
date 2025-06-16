@@ -92,7 +92,6 @@ const register = async (req, res, next) => {
       });
     } catch (emailError) {
       logger.warn('Failed to send welcome email:', emailError.message);
-      // Don't fail registration if email fails
     }
     
     // Return response
