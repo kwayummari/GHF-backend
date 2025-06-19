@@ -19,7 +19,6 @@ const getUserMenus = async (req, res, next) => {
     try {
         // Add validation for req.user
         if (!req.user || !req.user.id) {
-            console.log(req.user);
             return errorResponse(
                 res,
                 StatusCodes.UNAUTHORIZED,
