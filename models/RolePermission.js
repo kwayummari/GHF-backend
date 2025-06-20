@@ -28,42 +28,63 @@ const { sequelize } = require('../config/dbConfig');
  *           type: integer
  *           description: User ID who last updated this association
  */
-
 const RolePermission = sequelize.define('RolePermission', {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true,
-  },
   role_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'roles',
-      key: 'id'
+      key: 'id',
     },
-    onUpdate: 'CASCADE',
-    onDelete: 'CASCADE'
   },
   permission_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'permissions',
-      key: 'id'
+      key: 'id',
     },
-    onUpdate: 'CASCADE',
-    onDelete: 'CASCADE'
+  },
+  created_by: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id',
+    },
+  },
+  updated_by: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id',
+    },
   },
 }, {
   tableName: 'role_permissions',
   timestamps: true,
+  underscored: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
   indexes: [
     {
       unique: true,
-      fields: ['role_id', 'permission_id']
-    }
-  ]
+      fields: ['role_id', 'permission_id'],
+    },
+  ],
 });
+
+RolePermission.associate = (models) => {
+  RolePermission.belongsTo(models.User, {
+    foreignKey: 'created_by',
+    as: 'creator',
+  });
+
+  RolePermission.belongsTo(models.User, {
+    foreignKey: 'updated_by',
+    as: 'updater',
+  });
+};
 
 module.exports = RolePermission;

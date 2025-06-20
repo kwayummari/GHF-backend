@@ -25,18 +25,10 @@ const { sequelize } = require('../config/dbConfig');
  *           description: Whether this is a default role
  */
 const Role = sequelize.define('Role', {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true,
-  },
   role_name: {
     type: DataTypes.STRING(50),
     allowNull: false,
     unique: true,
-    validate: {
-      len: [2, 50],
-    },
   },
   description: {
     type: DataTypes.TEXT,
@@ -46,19 +38,29 @@ const Role = sequelize.define('Role', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
-  is_active: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true,
-  },
 }, {
   tableName: 'roles',
   timestamps: true,
-  indexes: [
-    {
-      unique: true,
-      fields: ['role_name']
-    }
-  ]
+  underscored: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
 });
+
+// Model associations
+Role.associate = (models) => {
+  Role.belongsToMany(models.User, {
+    through: models.UserRole,
+    foreignKey: 'role_id',
+    otherKey: 'user_id',
+    as: 'users',
+  });
+
+  Role.belongsToMany(models.Permission, {
+    through: models.RolePermission,
+    foreignKey: 'role_id',
+    otherKey: 'permission_id',
+    as: 'permissions',
+  });
+};
 
 module.exports = Role;

@@ -1,105 +1,41 @@
-// validators/roleValidator.js
-const { body, validationResult } = require('express-validator');
-const { StatusCodes } = require('http-status-codes');
+const { body } = require('express-validator');
 
-// Validation rules for role creation/update
-const validateRole = [
+/**
+ * Role validation rules
+ */
+const roleValidator = [
   body('role_name')
     .trim()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('Role name must be between 2 and 50 characters')
-    .matches(/^[a-zA-Z0-9\s_-]+$/)
-    .withMessage('Role name can only contain letters, numbers, spaces, underscores and hyphens'),
-
+    .notEmpty().withMessage('Role name is required')
+    .isLength({ min: 2, max: 50 }).withMessage('Role name must be between 2 and 50 characters'),
+  
   body('description')
     .optional()
-    .trim()
-    .isLength({ max: 500 })
-    .withMessage('Description cannot exceed 500 characters'),
-
-  body('is_default')
+    .trim(),
+  
+  body('permission_ids')
     .optional()
-    .isBoolean()
-    .withMessage('is_default must be a boolean value'),
-
-  body('permissions')
-    .optional()
-    .isArray()
-    .withMessage('Permissions must be an array'),
-
-  body('permissions.*')
-    .optional()
-    .isInt({ min: 1 })
-    .withMessage('Each permission ID must be a positive integer'),
-
-  // Middleware to handle validation errors
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
-    next();
-  }
+    .isArray().withMessage('Permission IDs must be an array')
+    .custom(value => {
+      if (value && !value.every(Number.isInteger)) {
+        throw new Error('Permission IDs must be integers');
+      }
+      return true;
+    }),
 ];
 
-// Validation rules for role permissions update
-const validateRolePermissions = [
-  body('permissions')
-    .isArray()
-    .withMessage('Permissions must be an array'),
-
-  body('permissions.*')
-    .isInt({ min: 1 })
-    .withMessage('Each permission ID must be a positive integer'),
-
-  // Middleware to handle validation errors
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
-    next();
-  }
-];
-
-// Validation rules for role assignment
-const validateRoleAssignment = [
+/**
+ * User-Role assignment validation rules
+ */
+const userRoleValidator = [
   body('user_id')
-    .isInt({ min: 1 })
-    .withMessage('User ID must be a positive integer'),
-
-  body('role_ids')
-    .isArray()
-    .withMessage('Role IDs must be an array'),
-
-  body('role_ids.*')
-    .isInt({ min: 1 })
-    .withMessage('Each role ID must be a positive integer'),
-
-  // Middleware to handle validation errors
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: 'Validation failed',
-        errors: errors.array()
-      });
-    }
-    next();
-  }
+    .isInt({ min: 1 }).withMessage('User ID must be a positive integer'),
+  
+  body('role_id')
+    .isInt({ min: 1 }).withMessage('Role ID must be a positive integer'),
 ];
 
 module.exports = {
-  validateRole,
-  validateRolePermissions,
-  validateRoleAssignment
+  roleValidator,
+  userRoleValidator,
 };
