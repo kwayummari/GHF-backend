@@ -30,39 +30,51 @@ const { sequelize } = require('../config/dbConfig');
  *           type: string
  *           description: Permission description
  */
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/dbConfig');
+
 const Permission = sequelize.define('Permission', {
-  name: {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  permission_name: {
     type: DataTypes.STRING(100),
     allowNull: false,
+    unique: true,
   },
   module: {
     type: DataTypes.STRING(50),
     allowNull: false,
   },
   action: {
-    type: DataTypes.ENUM('create', 'read', 'update', 'delete'),
+    type: DataTypes.ENUM('create', 'read', 'update', 'delete', 'manage'),
     allowNull: false,
   },
   description: {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  is_active: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+  },
 }, {
   tableName: 'permissions',
   timestamps: true,
-  underscored: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at',
+  indexes: [
+    {
+      unique: true,
+      fields: ['permission_name']
+    },
+    {
+      fields: ['module']
+    },
+    {
+      fields: ['action']
+    }
+  ]
 });
-
-// Model associations
-Permission.associate = (models) => {
-  Permission.belongsToMany(models.Role, {
-    through: models.RolePermission,
-    foreignKey: 'permission_id',
-    otherKey: 'role_id',
-    as: 'roles',
-  });
-};
 
 module.exports = Permission;

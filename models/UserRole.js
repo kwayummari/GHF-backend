@@ -23,34 +23,53 @@ const { sequelize } = require('../config/dbConfig');
  *           description: Role ID
  */
 const UserRole = sequelize.define('UserRole', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
   user_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'users',
-      key: 'id',
+      key: 'id'
     },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'
   },
   role_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: {
       model: 'roles',
-      key: 'id',
+      key: 'id'
     },
+    onUpdate: 'CASCADE',
+    onDelete: 'CASCADE'
+  },
+  assigned_by: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id'
+    },
+  },
+  assigned_at: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
   },
 }, {
   tableName: 'user_roles',
   timestamps: true,
-  underscored: true,
-  createdAt: 'created_at',
-  updatedAt: 'updated_at',
   indexes: [
     {
       unique: true,
-      fields: ['user_id', 'role_id'],
-    },
-  ],
+      fields: ['user_id', 'role_id']
+    }
+  ]
 });
+
 
 module.exports = UserRole;
