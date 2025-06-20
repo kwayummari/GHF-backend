@@ -271,4 +271,69 @@ router.delete('/:id', authenticate, authorize(['Admin']), roleController.deleteR
  */
 router.delete('/users/:user_id/roles/:role_id', authenticate, authorize(['Admin', 'HR Manager']), roleController.removeRoleFromUser);
 
+/**
+ * @swagger
+ * /api/v1/roles/{id}/menu-permissions:
+ *   get:
+ *     summary: Get role menu permissions
+ *     tags: [Roles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Role ID
+ *     responses:
+ *       200:
+ *         description: Role menu permissions retrieved successfully
+ *       404:
+ *         description: Role not found
+ */
+router.get('/:id/menu-permissions', authenticate, authorize(['Admin', 'HR Manager']), roleController.getRoleMenuPermissions);
+
+/**
+ * @swagger
+ * /api/v1/roles/{id}/menu-permissions:
+ *   put:
+ *     summary: Update role menu permissions
+ *     tags: [Roles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Role ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               permissions:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *               menu_permissions:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *               permission_ids:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *     responses:
+ *       200:
+ *         description: Role menu permissions updated successfully
+ *       404:
+ *         description: Role not found
+ */
+router.put('/:id/menu-permissions', authenticate, authorize(['Admin']), roleController.updateRoleMenuPermissions);
+
 module.exports = router;

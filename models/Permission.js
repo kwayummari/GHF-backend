@@ -56,12 +56,18 @@ const Permission = sequelize.define('Permission', {
 });
 
 // Model associations
+
 Permission.associate = (models) => {
+  Permission.hasMany(models.RolePermission, {
+    foreignKey: 'permission_id',
+    as: 'rolePermissions'
+  });
+
   Permission.belongsToMany(models.Role, {
     through: models.RolePermission,
     foreignKey: 'permission_id',
     otherKey: 'role_id',
-    as: 'roles',
+    as: 'roles'
   });
 };
 

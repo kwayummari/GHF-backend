@@ -61,6 +61,12 @@ Role.associate = (models) => {
     otherKey: 'permission_id',
     as: 'permissions',
   });
+
+  Role.hasMany(models.RolePermission, {
+    foreignKey: 'role_id',
+    as: 'rolePermissions'
+  });
+
 };
 
 module.exports = Role;

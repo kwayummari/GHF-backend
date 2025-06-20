@@ -85,6 +85,17 @@ RolePermission.associate = (models) => {
     foreignKey: 'updated_by',
     as: 'updater',
   });
+
+  RolePermission.belongsTo(models.Role, {
+    foreignKey: 'role_id',
+    as: 'role'
+  });
+
+  RolePermission.belongsTo(models.Permission, {
+    foreignKey: 'permission_id',
+    as: 'permission'
+  });
 };
+
 
 module.exports = RolePermission;
