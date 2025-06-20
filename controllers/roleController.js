@@ -17,6 +17,7 @@ const { updateAllUserPermissions } = require('../utils/permissionUpdater');
  */
 const getAllRoles = async (req, res, next) => {
   try {
+    console.log('Fetching all roles');
     const roles = await Role.findAll({
       include: [
         {
