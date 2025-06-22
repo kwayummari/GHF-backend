@@ -117,6 +117,131 @@ router.post('/', menuValidator, validateRequest, menuController.createMenu);
 
 /**
  * @swagger
+ * /api/v1/menus/permission-matrix:
+ *   get:
+ *     summary: Get menu permission matrix
+ *     description: Retrieve the complete permission matrix showing which roles have access to which menus.
+ *     tags: [Menus]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Permission matrix retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "Menu permission matrix retrieved successfully"
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     roles:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Role'
+ *                     menus:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Menu'
+ *                     matrix:
+ *                       type: object
+ *                       description: Permission matrix with keys as "roleId-menuId" and values as boolean
+ *                       example:
+ *                         "1-1": true
+ *                         "1-2": false
+ *                         "2-1": true
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
+router.get('/permission-matrix', menuController.getMenuPermissionMatrix);
+
+/**
+ * @swagger
+ * /api/v1/menus/statistics:
+ *   get:
+ *     summary: Get menu statistics
+ *     description: Retrieve various statistics related to menus, roles, and permissions.
+ *     tags: [Menus]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Menu statistics retrieved successfully
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
+router.get('/statistics', menuController.getMenuStatistics);
+
+/**
+ * @swagger
+ * /api/v1/menus/bulk-permissions:
+ *   put:
+ *     summary: Bulk update role-menu permissions
+ *     description: Update multiple role-menu permissions in a single request for efficient permission management.
+ *     tags: [Menus]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - permissions
+ *             properties:
+ *               permissions:
+ *                 type: array
+ *                 description: Array of permission updates
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - role_id
+ *                     - menu_id
+ *                     - can_access
+ *                   properties:
+ *                     role_id:
+ *                       type: integer
+ *                       description: Role ID
+ *                       example: 2
+ *                     menu_id:
+ *                       type: integer
+ *                       description: Menu ID
+ *                       example: 5
+ *                     can_access:
+ *                       type: boolean
+ *                       description: Whether role can access the menu
+ *                       example: true
+ *     responses:
+ *       200:
+ *         description: Permissions updated successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
+router.put('/bulk-permissions', menuController.bulkUpdateRoleMenuPermissions);
+
+/**
+ * @swagger
  * /api/v1/menus/{id}:
  *   get:
  *     summary: Get menu by ID
@@ -268,5 +393,137 @@ router.delete('/:id', menuController.deleteMenu);
  *         $ref: '#/components/responses/InternalServerError'
  */
 router.put('/roles/:role_id/menus/:menu_id/access', menuController.updateRoleMenuAccess);
+
+/**
+ * @swagger
+ * /api/v1/menus/{id}/order:
+ *   put:
+ *     summary: Update menu order
+ *     description: Update the display order and parent of a menu item for reorganizing navigation structure.
+ *     tags: [Menus]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Menu ID
+ *         example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               menu_order:
+ *                 type: integer
+ *                 description: New display order
+ *                 example: 5
+ *               parent_id:
+ *                 type: integer
+ *                 nullable: true
+ *                 description: New parent menu ID (null for top-level)
+ *                 example: 2
+ *     responses:
+ *       200:
+ *         description: Menu order updated successfully
+ *       400:
+ *         description: Validation error or circular reference
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         description: Menu not found
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
+router.put('/:id/order', menuController.updateMenuOrder);
+
+/**
+ * @swagger
+ * /api/v1/menus/{menu_id}/role-permissions:
+ *   get:
+ *     summary: Get role permissions for a specific menu
+ *     description: Retrieve all roles and their access status for a specific menu item.
+ *     tags: [Menus]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: menu_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Menu ID
+ *         example: 5
+ *     responses:
+ *       200:
+ *         description: Role permissions retrieved successfully
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         description: Menu not found
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
+router.get('/:menu_id/role-permissions', menuController.getRoleMenuPermissions);
+
+/**
+ * @swagger
+ * /api/v1/menus/{menu_id}/role-permissions:
+ *   put:
+ *     summary: Update role permissions for a specific menu
+ *     description: Update multiple role permissions for a specific menu item.
+ *     tags: [Menus]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: menu_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Menu ID
+ *         example: 5
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - role_permissions
+ *             properties:
+ *               role_permissions:
+ *                 type: object
+ *                 description: Object with keys as "roleId-menuId" and values as boolean
+ *                 example:
+ *                   "1-5": true
+ *                   "2-5": false
+ *                   "3-5": true
+ *     responses:
+ *       200:
+ *         description: Menu permissions updated successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       404:
+ *         description: Menu not found
+ *       500:
+ *         $ref: '#/components/responses/InternalServerError'
+ */
+router.put('/:menu_id/role-permissions', menuController.updateRoleMenuPermissions);
 
 module.exports = router;

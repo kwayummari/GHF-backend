@@ -735,6 +735,404 @@ const buildMenuHierarchy = (menus) => {
     return rootMenus;
 };
 
+/**
+ * Get menu permission matrix
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const getMenuPermissionMatrix = async (req, res, next) => {
+    try {
+        // Make sure to import these models at the top of your controller file
+        const Role = require('../models/Role');
+        const Menu = require('../models/Menu');
+        const RoleMenuAccess = require('../models/RoleMenuAccess');
+
+        // Get all roles
+        const roles = await Role.findAll({
+            attributes: ['id', 'role_name', 'description'],
+            order: [['role_name', 'ASC']]
+        });
+
+        // Get all active menus (including submenus)
+        const menus = await Menu.findAll({
+            attributes: ['id', 'menu_name', 'menu_label', 'parent_id', 'menu_order', 'menu_url'],
+            where: { is_active: true },
+            order: [['menu_order', 'ASC'], ['menu_label', 'ASC']]
+        });
+
+        // Get ALL role-menu access records from the database
+        const roleMenuAccessRecords = await RoleMenuAccess.findAll({
+            where: { can_access: true }, // Only get records where access is granted
+            attributes: ['role_id', 'menu_id', 'can_access']
+        });
+
+        // Build the permission matrix from actual database data
+        const permissionMatrix = {};
+
+        // Initialize all combinations as false
+        roles.forEach(role => {
+            menus.forEach(menu => {
+                const key = `${role.id}-${menu.id}`;
+                permissionMatrix[key] = false;
+            });
+        });
+
+        // Set true for actual permissions from database
+        roleMenuAccessRecords.forEach(access => {
+            const key = `${access.role_id}-${access.menu_id}`;
+            permissionMatrix[key] = access.can_access;
+        });
+
+        // Also get the hierarchical menu structure for better frontend display
+        const buildMenuHierarchy = (menus, parentId = null) => {
+            return menus
+                .filter(menu => menu.parent_id === parentId)
+                .sort((a, b) => a.menu_order - b.menu_order)
+                .map(menu => ({
+                    ...menu.toJSON(),
+                    level: parentId === null ? 0 : 1, // Simple level calculation
+                    children: buildMenuHierarchy(menus, menu.id)
+                }));
+        };
+
+        const menuHierarchy = buildMenuHierarchy(menus);
+
+        return successResponse(
+            res,
+            StatusCodes.OK,
+            'Menu permission matrix retrieved successfully',
+            {
+                roles: roles,
+                menus: menus,
+                menuHierarchy: menuHierarchy,
+                matrix: permissionMatrix,
+                // Additional debug info
+                totalPermissions: roleMenuAccessRecords.length,
+                matrixSize: Object.keys(permissionMatrix).length
+            }
+        );
+    } catch (error) {
+        logger.error('Get menu permission matrix error:', error);
+        next(error);
+    }
+};
+
+const getMenuStatistics = async (req, res, next) => {
+    try {
+        const Menu = require('../models/Menu');
+        const Role = require('../models/Role');
+        const RoleMenuAccess = require('../models/RoleMenuAccess');
+
+        // Get menu counts
+        const totalMenus = await Menu.count();
+        const activeMenus = await Menu.count({ where: { is_active: true } });
+        const parentMenus = await Menu.count({ where: { parent_id: null } });
+        const totalRoles = await Role.count();
+
+        // Get permission counts
+        const totalPermissions = await RoleMenuAccess.count();
+        const activePermissions = await RoleMenuAccess.count({ where: { can_access: true } });
+
+        return successResponse(
+            res,
+            StatusCodes.OK,
+            'Menu statistics retrieved successfully',
+            {
+                totalMenus,
+                activeMenus,
+                parentMenus,
+                totalRoles,
+                totalPermissions,
+                activePermissions
+            }
+        );
+    } catch (error) {
+        logger.error('Get menu statistics error:', error);
+        next(error);
+    }
+};
+
+/**
+ * Update menu order
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const updateMenuOrder = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { menu_order, parent_id } = req.body;
+
+        // Check if menu exists
+        const menu = await Menu.findByPk(id);
+
+        if (!menu) {
+            return errorResponse(
+                res,
+                StatusCodes.NOT_FOUND,
+                'Menu not found'
+            );
+        }
+
+        // Validate parent menu if provided
+        if (parent_id && parent_id !== menu.parent_id) {
+            const parentMenu = await Menu.findByPk(parent_id);
+            if (!parentMenu) {
+                return errorResponse(
+                    res,
+                    StatusCodes.BAD_REQUEST,
+                    'Parent menu not found',
+                    [{ field: 'parent_id', message: 'Parent menu does not exist' }]
+                );
+            }
+
+            // Check for circular reference
+            if (parent_id === id) {
+                return errorResponse(
+                    res,
+                    StatusCodes.BAD_REQUEST,
+                    'Menu cannot be its own parent',
+                    [{ field: 'parent_id', message: 'Circular reference not allowed' }]
+                );
+            }
+        }
+
+        // Update menu order and parent
+        await menu.update({
+            menu_order: menu_order !== undefined ? menu_order : menu.menu_order,
+            parent_id: parent_id !== undefined ? parent_id : menu.parent_id
+        });
+
+        // Get updated menu
+        const updatedMenu = await Menu.findOne({
+            where: { id },
+            include: [
+                {
+                    model: Menu,
+                    as: 'parent',
+                    attributes: ['id', 'menu_name', 'menu_label']
+                },
+                {
+                    model: Menu,
+                    as: 'children',
+                    attributes: ['id', 'menu_name', 'menu_label', 'menu_order']
+                }
+            ]
+        });
+
+        return successResponse(
+            res,
+            StatusCodes.OK,
+            'Menu order updated successfully',
+            updatedMenu
+        );
+    } catch (error) {
+        logger.error('Update menu order error:', error);
+        next(error);
+    }
+};
+
+/**
+ * Bulk update role-menu permissions
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const bulkUpdateRoleMenuPermissions = async (req, res, next) => {
+    try {
+        const { permissions } = req.body;
+
+        if (!permissions || !Array.isArray(permissions)) {
+            return errorResponse(
+                res,
+                StatusCodes.BAD_REQUEST,
+                'Invalid permissions data',
+                [{ field: 'permissions', message: 'Permissions must be an array' }]
+            );
+        }
+
+        // Start transaction
+        const transaction = await Menu.sequelize.transaction();
+
+        try {
+            // Process each permission update
+            for (const permission of permissions) {
+                const { role_id, menu_id, can_access } = permission;
+
+                // Validate role exists
+                const role = await Role.findByPk(role_id);
+                if (!role) {
+                    throw new Error(`Role with ID ${role_id} not found`);
+                }
+
+                // Validate menu exists
+                const menu = await Menu.findByPk(menu_id);
+                if (!menu) {
+                    throw new Error(`Menu with ID ${menu_id} not found`);
+                }
+
+                // Update or create role menu access
+                await RoleMenuAccess.upsert({
+                    role_id,
+                    menu_id,
+                    can_access: can_access !== undefined ? can_access : true
+                }, { transaction });
+            }
+
+            // Commit transaction
+            await transaction.commit();
+
+            return successResponse(
+                res,
+                StatusCodes.OK,
+                'Role menu permissions updated successfully',
+                { updated_count: permissions.length }
+            );
+        } catch (error) {
+            // Rollback transaction in case of error
+            await transaction.rollback();
+            throw error;
+        }
+    } catch (error) {
+        logger.error('Bulk update role menu permissions error:', error);
+        next(error);
+    }
+};
+
+/**
+ * Get role menu permissions for a specific menu
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const getRoleMenuPermissions = async (req, res, next) => {
+    try {
+        const { menu_id } = req.params;
+
+        // Check if menu exists
+        const menu = await Menu.findByPk(menu_id);
+        if (!menu) {
+            return errorResponse(
+                res,
+                StatusCodes.NOT_FOUND,
+                'Menu not found'
+            );
+        }
+
+        // Get all roles with their access status for this menu
+        const roles = await Role.findAll({
+            include: [
+                {
+                    model: Menu,
+                    as: 'menus',
+                    where: { id: menu_id },
+                    through: {
+                        attributes: ['can_access'],
+                        as: 'access'
+                    },
+                    required: false
+                }
+            ],
+            order: [['role_name', 'ASC']]
+        });
+
+        // Build permission matrix for this menu
+        const permissionMatrix = {};
+        roles.forEach(role => {
+            const access = role.menus && role.menus.length > 0 ? role.menus[0].access.can_access : false;
+            permissionMatrix[`${role.id}-${menu_id}`] = access;
+        });
+
+        return successResponse(
+            res,
+            StatusCodes.OK,
+            'Role menu permissions retrieved successfully',
+            {
+                menu,
+                roles,
+                permissions: permissionMatrix
+            }
+        );
+    } catch (error) {
+        logger.error('Get role menu permissions error:', error);
+        next(error);
+    }
+};
+
+/**
+ * Update role menu permissions for a specific menu
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const updateRoleMenuPermissions = async (req, res, next) => {
+    try {
+        const { menu_id } = req.params;
+        const { role_permissions } = req.body;
+
+        // Check if menu exists
+        const menu = await Menu.findByPk(menu_id);
+        if (!menu) {
+            return errorResponse(
+                res,
+                StatusCodes.NOT_FOUND,
+                'Menu not found'
+            );
+        }
+
+        if (!role_permissions || typeof role_permissions !== 'object') {
+            return errorResponse(
+                res,
+                StatusCodes.BAD_REQUEST,
+                'Invalid role permissions data',
+                [{ field: 'role_permissions', message: 'Role permissions must be an object' }]
+            );
+        }
+
+        // Start transaction
+        const transaction = await Menu.sequelize.transaction();
+
+        try {
+            // Process each role permission
+            for (const [key, can_access] of Object.entries(role_permissions)) {
+                const [role_id] = key.split('-');
+
+                if (!role_id || role_id === menu_id.toString()) continue;
+
+                // Validate role exists
+                const role = await Role.findByPk(role_id);
+                if (!role) {
+                    continue; // Skip invalid roles
+                }
+
+                // Update or create role menu access
+                await RoleMenuAccess.upsert({
+                    role_id: parseInt(role_id),
+                    menu_id: parseInt(menu_id),
+                    can_access: Boolean(can_access)
+                }, { transaction });
+            }
+
+            // Commit transaction
+            await transaction.commit();
+
+            return successResponse(
+                res,
+                StatusCodes.OK,
+                'Menu permissions updated successfully'
+            );
+        } catch (error) {
+            // Rollback transaction in case of error
+            await transaction.rollback();
+            throw error;
+        }
+    } catch (error) {
+        logger.error('Update role menu permissions error:', error);
+        next(error);
+    }
+};
+
 module.exports = {
     getUserMenus,
     getAllMenus,
@@ -742,5 +1140,11 @@ module.exports = {
     updateMenu,
     deleteMenu,
     getMenuById,
-    updateRoleMenuAccess
+    updateRoleMenuAccess,
+    getMenuPermissionMatrix,
+    updateMenuOrder,
+    bulkUpdateRoleMenuPermissions,
+    getRoleMenuPermissions,
+    updateRoleMenuPermissions,
+    getMenuStatistics
 };

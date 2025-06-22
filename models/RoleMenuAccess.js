@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const {sequelize} = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * RoleMenuAccess model - Junction table for Role-Menu access control
@@ -24,6 +24,15 @@ const {sequelize} = require('../config/dbConfig');
  *         can_access:
  *           type: boolean
  *           description: Whether the role can access this menu
+ *           default: true
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *           description: Creation timestamp
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ *           description: Last update timestamp
  */
 const RoleMenuAccess = sequelize.define('RoleMenuAccess', {
     role_id: {
@@ -33,6 +42,8 @@ const RoleMenuAccess = sequelize.define('RoleMenuAccess', {
             model: 'roles',
             key: 'id',
         },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
     },
     menu_id: {
         type: DataTypes.INTEGER,
@@ -41,9 +52,12 @@ const RoleMenuAccess = sequelize.define('RoleMenuAccess', {
             model: 'menus',
             key: 'id',
         },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE',
     },
     can_access: {
         type: DataTypes.BOOLEAN,
+        allowNull: false,
         defaultValue: true,
     },
 }, {
@@ -57,20 +71,16 @@ const RoleMenuAccess = sequelize.define('RoleMenuAccess', {
             unique: true,
             fields: ['role_id', 'menu_id'],
         },
+        {
+            fields: ['role_id'],
+        },
+        {
+            fields: ['menu_id'],
+        },
+        {
+            fields: ['can_access'],
+        },
     ],
 });
-
-// Model associations
-RoleMenuAccess.associate = (models) => {
-    RoleMenuAccess.belongsTo(models.Role, {
-        foreignKey: 'role_id',
-        as: 'role',
-    });
-
-    RoleMenuAccess.belongsTo(models.Menu, {
-        foreignKey: 'menu_id',
-        as: 'menu',
-    });
-};
 
 module.exports = RoleMenuAccess;
