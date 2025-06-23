@@ -47,6 +47,8 @@ const SalaryComponent = require('./SalaryComponent');
 const Menu = require('./Menu');
 const MenuPermission = require('./MenuPermission');
 const RoleMenuAccess = require('./RoleMenuAccess');
+// const Timesheet = require('./Timesheet');
+// const TimesheetEntry = require('./TimesheetEntry');
 
 // Initialize models object with all models
 const models = {
@@ -93,7 +95,9 @@ const models = {
   SalaryComponent,
   Menu,
   MenuPermission,
-  RoleMenuAccess
+  RoleMenuAccess,
+  // Timesheet,
+  // TimesheetEntry,
 };
 
 // Associate models
