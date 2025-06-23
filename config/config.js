@@ -32,11 +32,11 @@ const config = {
   
   // Email configuration
   EMAIL: {
-    SMTP_HOST: process.env.SMTP_HOST || 'smtp.example.com',
-    SMTP_PORT: process.env.SMTP_PORT || 587,
-    SMTP_USER: process.env.SMTP_USER || 'user@example.com',
-    SMTP_PASS: process.env.SMTP_PASS || 'password',
-    FROM: process.env.EMAIL_FROM || 'noreply@ghf.com',
+    SMTP_HOST: process.env.SMTP_HOST || 'smtp0101.titan.email',
+    SMTP_PORT: process.env.SMTP_PORT || 465,
+    SMTP_USER: process.env.SMTP_USER || 'noreply@ghf.or.tz',
+    SMTP_PASS: process.env.SMTP_PASS || 'RO/We8&.e})WR-%',
+    FROM: process.env.EMAIL_FROM || 'noreply@ghf.or.tz',
   },
   
   // Upload configuration

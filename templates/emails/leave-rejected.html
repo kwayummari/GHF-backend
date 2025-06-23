@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Request Rejected</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #dc3545; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>❌ Leave Request Rejected</h1>
+    </div>
+    <div class="content">
+        <p>Dear {{employeeName}},</p>
+        <p>We regret to inform you that your leave request has been <strong>rejected</strong>.</p>
+        <p><strong>Leave Details:</strong></p>
+        <ul>
+            <li>Leave Type: {{leaveType}}</li>
+            <li>Duration: {{startDate}} to {{endDate}}</li>
+            <li>Rejected by: {{rejectedBy}}</li>
+        </ul>
+        {{#if rejectionReason}}
+        <p><strong>Reason for rejection:</strong><br>{{rejectionReason}}</p>
+        {{/if}}
+        <p>Please contact your supervisor or HR for more information or to discuss alternative dates.</p>
+        <p>Best regards,<br>HR Team</p>
+    </div>
+</body>
+</html>

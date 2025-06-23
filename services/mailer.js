@@ -8,7 +8,7 @@ const logger = require('../utils/logger');
 const transporter = nodemailer.createTransport({
   host: config.EMAIL.SMTP_HOST,
   port: config.EMAIL.SMTP_PORT,
-  secure: config.EMAIL.SMTP_PORT === 465,
+  secure: Number(config.EMAIL.SMTP_PORT) === 465,
   auth: {
     user: config.EMAIL.SMTP_USER,
     pass: config.EMAIL.SMTP_PASS,

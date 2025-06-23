@@ -966,6 +966,83 @@ const cancelLeaveApplication = async (req, res, next) => {
   }
 };
 
+/**
+ * Get leave balance for user
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const getLeaveBalance = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const targetUserId = userId || req.user.id;
+
+    // Check permission - users can only see their own balance unless admin/HR
+    const isAdmin = req.user.roles && req.user.roles.includes('Admin');
+    const isHR = req.user.roles && req.user.roles.includes('HR Manager');
+
+    if (targetUserId != req.user.id && !isAdmin && !isHR) {
+      return errorResponse(
+        res,
+        StatusCodes.FORBIDDEN,
+        'You can only view your own leave balance'
+      );
+    }
+
+    // Get all leave types
+    const leaveTypes = await LeaveType.findAll({
+      order: [['name', 'ASC']]
+    });
+
+    // Calculate used days for each leave type in current year
+    const currentYear = new Date().getFullYear();
+    const yearStart = `${currentYear}-01-01`;
+    const yearEnd = `${currentYear}-12-31`;
+
+    const leaveBalance = {};
+
+    for (const leaveType of leaveTypes) {
+      // Get approved leaves for this type in current year
+      const usedLeaves = await LeaveApplication.findAll({
+        where: {
+          user_id: targetUserId,
+          type_id: leaveType.id,
+          approval_status: 'approved',
+          starting_date: {
+            [Op.between]: [yearStart, yearEnd]
+          }
+        }
+      });
+
+      // Calculate total used days
+      let usedDays = 0;
+      usedLeaves.forEach(leave => {
+        const validityCheck = leave.validity_check || '0 days';
+        const days = parseInt(validityCheck.split(' ')[0]) || 0;
+        usedDays += days;
+      });
+
+      leaveBalance[leaveType.id] = {
+        leave_type: leaveType.name,
+        total_allocated: leaveType.maximum_days,
+        used: usedDays,
+        available: Math.max(0, leaveType.maximum_days - usedDays),
+        pending: 0 // You can calculate pending applications if needed
+      };
+    }
+
+    return successResponse(
+      res,
+      StatusCodes.OK,
+      'Leave balance retrieved successfully',
+      leaveBalance
+    );
+  } catch (error) {
+    logger.error('Get leave balance error:', error);
+    next(error);
+  }
+};
+
 module.exports = {
   getAllLeaveTypes,
   createLeaveApplication,
@@ -973,7 +1050,6 @@ module.exports = {
   getLeaveApplicationById,
   updateLeaveStatus,
   updateLeaveApplication,
-  cancelLeaveApplication
+  cancelLeaveApplication,
+  getLeaveBalance
 };
-    
-    // Check if application is not already approved or completed
