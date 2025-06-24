@@ -12,6 +12,7 @@ const corsConfig = {
     const whitelist = [
       'http://localhost:3000',
       'http://localhost:8080',
+      'http://185.172.57.203',
       // Add production domains here
       'https://yourproductiondomain.com',
     ];
