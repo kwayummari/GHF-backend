@@ -1,5 +1,6 @@
 const { StatusCodes } = require('http-status-codes');
-const { Op } = require('sequelize');
+const { Op, Sequelize } = require('sequelize');
+const sequelize = require('../config/dbConfig');
 const Attendance = require('../models/Attendance');
 const User = require('../models/User');
 const WorkScheduler = require('../models/WorkScheduler');
@@ -19,7 +20,7 @@ const clockIn = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { date = new Date().toISOString().split('T')[0], activity } = req.body;
-    
+
     // Check if already clocked in today
     const existingAttendance = await Attendance.findOne({
       where: {
@@ -27,7 +28,7 @@ const clockIn = async (req, res, next) => {
         date
       }
     });
-    
+
     if (existingAttendance && existingAttendance.arrival_time) {
       return errorResponse(
         res,
@@ -39,35 +40,35 @@ const clockIn = async (req, res, next) => {
         }]
       );
     }
-    
+
     // Check if it's a workday, weekend, or holiday
     const dayOfWeek = new Date(date).toLocaleDateString('en-US', { weekday: 'long' });
-    
+
     // Check work schedule
     const workDay = await WorkScheduler.findOne({
       where: {
         day_of_week: dayOfWeek
       }
     });
-    
+
     // Check if it's a holiday
     const holiday = await HolidayList.findOne({
       where: {
         date
       }
     });
-    
+
     let schedulerStatus;
-    
+
     if (holiday) {
       schedulerStatus = workDay ? 'holiday in working day' : 'holiday in weekend';
     } else {
       schedulerStatus = workDay ? 'working day' : 'weekend';
     }
-    
+
     // Create or update attendance record
     const now = new Date();
-    
+
     if (existingAttendance) {
       await existingAttendance.update({
         arrival_time: now,
@@ -75,7 +76,7 @@ const clockIn = async (req, res, next) => {
         activity,
         scheduler_status: schedulerStatus
       });
-      
+
       return successResponse(
         res,
         StatusCodes.OK,
@@ -95,7 +96,7 @@ const clockIn = async (req, res, next) => {
         scheduler_status: schedulerStatus,
         approval_status: 'draft'
       });
-      
+
       return successResponse(
         res,
         StatusCodes.CREATED,
@@ -119,7 +120,7 @@ const clockOut = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { date = new Date().toISOString().split('T')[0], activity, description } = req.body;
-    
+
     // Check if already clocked in today
     const existingAttendance = await Attendance.findOne({
       where: {
@@ -127,7 +128,7 @@ const clockOut = async (req, res, next) => {
         date
       }
     });
-    
+
     if (!existingAttendance || !existingAttendance.arrival_time) {
       return errorResponse(
         res,
@@ -139,7 +140,7 @@ const clockOut = async (req, res, next) => {
         }]
       );
     }
-    
+
     if (existingAttendance.departure_time) {
       return errorResponse(
         res,
@@ -151,17 +152,17 @@ const clockOut = async (req, res, next) => {
         }]
       );
     }
-    
+
     // Update attendance record with departure time
     const now = new Date();
-    
+
     // Calculate work duration in hours
     const arrivalTime = new Date(existingAttendance.arrival_time);
     const durationHours = (now - arrivalTime) / (1000 * 60 * 60);
-    
+
     // Determine if it's half day (less than 4 hours) or full day
     const status = durationHours < 4 ? 'half day' : 'present';
-    
+
     // Update attendance
     await existingAttendance.update({
       departure_time: now,
@@ -169,7 +170,7 @@ const clockOut = async (req, res, next) => {
       activity: activity || existingAttendance.activity,
       description: description || existingAttendance.description
     });
-    
+
     return successResponse(
       res,
       StatusCodes.OK,
@@ -195,26 +196,26 @@ const clockOut = async (req, res, next) => {
 const getMyAttendance = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { 
-      page = 1, 
-      limit = 31, 
-      month, 
+    const {
+      page = 1,
+      limit = 31,
+      month,
       year,
       status = ''
     } = req.query;
-    
+
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    
+
     // Build where conditions
     const whereConditions = {
       user_id: userId
     };
-    
+
     // Filter by month and year if provided
     if (month && year) {
       const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
       const endDate = new Date(parseInt(year), parseInt(month), 0); // Last day of month
-      
+
       whereConditions.date = {
         [Op.between]: [
           startDate.toISOString().split('T')[0],
@@ -225,7 +226,7 @@ const getMyAttendance = async (req, res, next) => {
       // Just filter by year
       const startDate = new Date(parseInt(year), 0, 1);
       const endDate = new Date(parseInt(year), 11, 31);
-      
+
       whereConditions.date = {
         [Op.between]: [
           startDate.toISOString().split('T')[0],
@@ -233,12 +234,12 @@ const getMyAttendance = async (req, res, next) => {
         ]
       };
     }
-    
+
     // Filter by status if provided
     if (status) {
       whereConditions.status = status;
     }
-    
+
     // Execute query
     const { count, rows } = await Attendance.findAndCountAll({
       where: whereConditions,
@@ -246,17 +247,17 @@ const getMyAttendance = async (req, res, next) => {
       limit: parseInt(limit),
       offset
     });
-    
+
     // Calculate pagination info
     const totalPages = Math.ceil(count / parseInt(limit));
     const currentPage = parseInt(page);
-    
+
     // Calculate summary statistics
     const presentDays = rows.filter(record => record.status === 'present').length;
     const halfDays = rows.filter(record => record.status === 'half day').length;
     const absentDays = rows.filter(record => record.status === 'absent').length;
     const leaveDays = rows.filter(record => record.status === 'on leave').length;
-    
+
     return paginatedResponse(
       res,
       StatusCodes.OK,
@@ -293,24 +294,24 @@ const getMyAttendance = async (req, res, next) => {
 const getEmployeeAttendance = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { 
-      page = 1, 
-      limit = 31, 
-      month, 
+    const {
+      page = 1,
+      limit = 31,
+      month,
       year,
       status = ''
     } = req.query;
-    
+
     // Check permissions - only admin, HR, or the employee's supervisor can view
     const isAdmin = req.user.roles && req.user.roles.includes('Admin');
     const isHR = req.user.roles && req.user.roles.includes('HR Manager');
-    
+
     if (!isAdmin && !isHR) {
       // Check if user is supervisor
       const employeeData = await BasicEmployeeData.findOne({
         where: { user_id: id }
       });
-      
+
       if (!employeeData || employeeData.supervisor_id !== req.user.id) {
         return errorResponse(
           res,
@@ -319,19 +320,19 @@ const getEmployeeAttendance = async (req, res, next) => {
         );
       }
     }
-    
+
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    
+
     // Build where conditions
     const whereConditions = {
       user_id: id
     };
-    
+
     // Filter by month and year if provided
     if (month && year) {
       const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
       const endDate = new Date(parseInt(year), parseInt(month), 0); // Last day of month
-      
+
       whereConditions.date = {
         [Op.between]: [
           startDate.toISOString().split('T')[0],
@@ -342,7 +343,7 @@ const getEmployeeAttendance = async (req, res, next) => {
       // Just filter by year
       const startDate = new Date(parseInt(year), 0, 1);
       const endDate = new Date(parseInt(year), 11, 31);
-      
+
       whereConditions.date = {
         [Op.between]: [
           startDate.toISOString().split('T')[0],
@@ -350,12 +351,12 @@ const getEmployeeAttendance = async (req, res, next) => {
         ]
       };
     }
-    
+
     // Filter by status if provided
     if (status) {
       whereConditions.status = status;
     }
-    
+
     // Get employee details
     const employee = await User.findOne({
       where: { id },
@@ -374,7 +375,7 @@ const getEmployeeAttendance = async (req, res, next) => {
         }
       ]
     });
-    
+
     if (!employee) {
       return errorResponse(
         res,
@@ -382,7 +383,7 @@ const getEmployeeAttendance = async (req, res, next) => {
         'Employee not found'
       );
     }
-    
+
     // Execute query
     const { count, rows } = await Attendance.findAndCountAll({
       where: whereConditions,
@@ -390,17 +391,17 @@ const getEmployeeAttendance = async (req, res, next) => {
       limit: parseInt(limit),
       offset
     });
-    
+
     // Calculate pagination info
     const totalPages = Math.ceil(count / parseInt(limit));
     const currentPage = parseInt(page);
-    
+
     // Calculate summary statistics
     const presentDays = rows.filter(record => record.status === 'present').length;
     const halfDays = rows.filter(record => record.status === 'half day').length;
     const absentDays = rows.filter(record => record.status === 'absent').length;
     const leaveDays = rows.filter(record => record.status === 'on leave').length;
-    
+
     return paginatedResponse(
       res,
       StatusCodes.OK,
@@ -446,13 +447,13 @@ const getEmployeeAttendance = async (req, res, next) => {
 const getDepartmentAttendanceReport = async (req, res, next) => {
   try {
     const { department_id } = req.params;
-    const { 
+    const {
       date = new Date().toISOString().split('T')[0]
     } = req.query;
-    
+
     // Check if department exists
     const department = await Department.findByPk(department_id);
-    
+
     if (!department) {
       return errorResponse(
         res,
@@ -460,7 +461,7 @@ const getDepartmentAttendanceReport = async (req, res, next) => {
         'Department not found'
       );
     }
-    
+
     // Get all employees in department
     const employees = await User.findAll({
       include: [
@@ -477,7 +478,7 @@ const getDepartmentAttendanceReport = async (req, res, next) => {
       attributes: ['id', 'first_name', 'middle_name', 'sur_name'],
       order: [['first_name', 'ASC'], ['sur_name', 'ASC']]
     });
-    
+
     // Get attendance records for the day
     const attendanceRecords = await Attendance.findAll({
       where: {
@@ -485,11 +486,11 @@ const getDepartmentAttendanceReport = async (req, res, next) => {
         date
       }
     });
-    
+
     // Map attendance records to employees
     const attendanceReport = employees.map(employee => {
       const attendanceRecord = attendanceRecords.find(record => record.user_id === employee.id);
-      
+
       return {
         employee_id: employee.id,
         name: `${employee.first_name} ${employee.middle_name ? employee.middle_name + ' ' : ''}${employee.sur_name}`,
@@ -499,13 +500,13 @@ const getDepartmentAttendanceReport = async (req, res, next) => {
         activity: attendanceRecord?.activity
       };
     });
-    
+
     // Calculate summary
     const present = attendanceReport.filter(record => record.status === 'present').length;
     const halfDay = attendanceReport.filter(record => record.status === 'half day').length;
     const absent = attendanceReport.filter(record => record.status === 'absent').length;
     const onLeave = attendanceReport.filter(record => record.status === 'on leave').length;
-    
+
     return successResponse(
       res,
       StatusCodes.OK,
@@ -539,7 +540,7 @@ const getDepartmentAttendanceReport = async (req, res, next) => {
 const updateAttendance = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { 
+    const {
       date,
       arrival_time,
       departure_time,
@@ -549,10 +550,10 @@ const updateAttendance = async (req, res, next) => {
       scheduler_status,
       approval_status
     } = req.body;
-    
+
     // Check if attendance record exists
     const attendance = await Attendance.findByPk(id);
-    
+
     if (!attendance) {
       return errorResponse(
         res,
@@ -560,11 +561,11 @@ const updateAttendance = async (req, res, next) => {
         'Attendance record not found'
       );
     }
-    
+
     // Check permissions - only admin or HR can update attendance
     const isAdmin = req.user.roles && req.user.roles.includes('Admin');
     const isHR = req.user.roles && req.user.roles.includes('HR Manager');
-    
+
     if (!isAdmin && !isHR) {
       return errorResponse(
         res,
@@ -572,10 +573,10 @@ const updateAttendance = async (req, res, next) => {
         'You do not have permission to update attendance records'
       );
     }
-    
+
     // Update attendance record
     const updateData = {};
-    
+
     if (date) updateData.date = date;
     if (arrival_time) updateData.arrival_time = arrival_time;
     if (departure_time) updateData.departure_time = departure_time;
@@ -584,9 +585,9 @@ const updateAttendance = async (req, res, next) => {
     if (activity !== undefined) updateData.activity = activity;
     if (scheduler_status) updateData.scheduler_status = scheduler_status;
     if (approval_status) updateData.approval_status = approval_status;
-    
+
     await attendance.update(updateData);
-    
+
     return successResponse(
       res,
       StatusCodes.OK,
@@ -609,7 +610,7 @@ const getWorkSchedule = async (req, res, next) => {
   try {
     const workSchedule = await WorkScheduler.findAll({
       order: [
-        [sequelize.literal(`CASE 
+        [Sequelize.literal(`CASE 
           WHEN day_of_week = 'Monday' THEN 1 
           WHEN day_of_week = 'Tuesday' THEN 2 
           WHEN day_of_week = 'Wednesday' THEN 3 
@@ -620,7 +621,7 @@ const getWorkSchedule = async (req, res, next) => {
         END`), 'ASC']
       ]
     });
-    
+
     return successResponse(
       res,
       StatusCodes.OK,
@@ -643,10 +644,10 @@ const updateWorkSchedule = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { start_time, end_time } = req.body;
-    
+
     // Check if work schedule exists
     const workSchedule = await WorkScheduler.findByPk(id);
-    
+
     if (!workSchedule) {
       return errorResponse(
         res,
@@ -654,10 +655,10 @@ const updateWorkSchedule = async (req, res, next) => {
         'Work schedule not found'
       );
     }
-    
+
     // Check permissions - only admin can update work schedule
     const isAdmin = req.user.roles && req.user.roles.includes('Admin');
-    
+
     if (!isAdmin) {
       return errorResponse(
         res,
@@ -665,13 +666,13 @@ const updateWorkSchedule = async (req, res, next) => {
         'You do not have permission to update work schedule'
       );
     }
-    
+
     // Update work schedule
     await workSchedule.update({
       start_time: start_time || workSchedule.start_time,
       end_time: end_time || workSchedule.end_time
     });
-    
+
     return successResponse(
       res,
       StatusCodes.OK,
@@ -693,9 +694,9 @@ const updateWorkSchedule = async (req, res, next) => {
 const getHolidays = async (req, res, next) => {
   try {
     const { year } = req.query;
-    
+
     const whereConditions = {};
-    
+
     if (year) {
       whereConditions.date = {
         [Op.between]: [
@@ -704,12 +705,12 @@ const getHolidays = async (req, res, next) => {
         ]
       };
     }
-    
+
     const holidays = await HolidayList.findAll({
       where: whereConditions,
       order: [['date', 'ASC']]
     });
-    
+
     return successResponse(
       res,
       StatusCodes.OK,
@@ -731,12 +732,12 @@ const getHolidays = async (req, res, next) => {
 const createHoliday = async (req, res, next) => {
   try {
     const { name, date, is_workday = false } = req.body;
-    
+
     // Check if holiday already exists on this date
     const existingHoliday = await HolidayList.findOne({
       where: { date }
     });
-    
+
     if (existingHoliday) {
       return errorResponse(
         res,
@@ -745,7 +746,7 @@ const createHoliday = async (req, res, next) => {
         [{ field: 'date', message: `${existingHoliday.name} is already scheduled for this date` }]
       );
     }
-    
+
     // Create holiday
     const holiday = await HolidayList.create({
       name,
@@ -754,7 +755,7 @@ const createHoliday = async (req, res, next) => {
       status: 'editable',
       created_by: req.user.id
     });
-    
+
     return successResponse(
       res,
       StatusCodes.CREATED,
@@ -777,10 +778,10 @@ const updateHoliday = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, date, is_workday } = req.body;
-    
+
     // Check if holiday exists
     const holiday = await HolidayList.findByPk(id);
-    
+
     if (!holiday) {
       return errorResponse(
         res,
@@ -788,7 +789,7 @@ const updateHoliday = async (req, res, next) => {
         'Holiday not found'
       );
     }
-    
+
     // Check if holiday is editable
     if (holiday.status === 'non-editable') {
       return errorResponse(
@@ -797,16 +798,16 @@ const updateHoliday = async (req, res, next) => {
         'This holiday cannot be edited'
       );
     }
-    
+
     // Check if date is being changed and if so, check for conflicts
     if (date && date !== holiday.date) {
       const existingHoliday = await HolidayList.findOne({
-        where: { 
+        where: {
           date,
           id: { [Op.ne]: id } // Exclude current holiday
         }
       });
-      
+
       if (existingHoliday) {
         return errorResponse(
           res,
@@ -816,7 +817,7 @@ const updateHoliday = async (req, res, next) => {
         );
       }
     }
-    
+
     // Update holiday
     await holiday.update({
       name: name || holiday.name,
@@ -824,7 +825,7 @@ const updateHoliday = async (req, res, next) => {
       is_workday: is_workday !== undefined ? is_workday : holiday.is_workday,
       updated_by: req.user.id
     });
-    
+
     return successResponse(
       res,
       StatusCodes.OK,
@@ -846,10 +847,10 @@ const updateHoliday = async (req, res, next) => {
 const deleteHoliday = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
+
     // Check if holiday exists
     const holiday = await HolidayList.findByPk(id);
-    
+
     if (!holiday) {
       return errorResponse(
         res,
@@ -857,7 +858,7 @@ const deleteHoliday = async (req, res, next) => {
         'Holiday not found'
       );
     }
-    
+
     // Check if holiday is editable
     if (holiday.status === 'non-editable') {
       return errorResponse(
@@ -866,10 +867,10 @@ const deleteHoliday = async (req, res, next) => {
         'This holiday cannot be deleted'
       );
     }
-    
+
     // Delete holiday
     await holiday.destroy();
-    
+
     return successResponse(
       res,
       StatusCodes.OK,

@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * MeetingRecord model
@@ -88,17 +88,17 @@ MeetingRecord.associate = (models) => {
     foreignKey: 'uploader_user_id',
     as: 'uploader',
   });
-  
+
   MeetingRecord.belongsTo(models.User, {
     foreignKey: 'chairperson_user_id',
     as: 'chairperson',
   });
-  
+
   MeetingRecord.belongsTo(models.Document, {
     foreignKey: 'document_id',
     as: 'document',
   });
-  
+
   MeetingRecord.hasMany(models.MeetingTask, {
     foreignKey: 'meeting_id',
     as: 'tasks',

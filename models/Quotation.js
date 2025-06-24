@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * Quotation model
@@ -104,12 +104,12 @@ Quotation.associate = (models) => {
     foreignKey: 'supplier_id',
     as: 'supplier',
   });
-  
+
   Quotation.belongsTo(models.Document, {
     foreignKey: 'document_id',
     as: 'document',
   });
-  
+
   Quotation.belongsTo(models.User, {
     foreignKey: 'submitted_by',
     as: 'submitter',

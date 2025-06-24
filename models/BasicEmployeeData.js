@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const {sequelize} = require('../config/dbConfig');
 
 /**
  * BasicEmployeeData model
@@ -68,6 +68,15 @@ const sequelize = require('../config/dbConfig');
  *           description: Employee signature (file path or base64)
  */
 const BasicEmployeeData = sequelize.define('BasicEmployeeData', {
+  user_id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
   status: {
     type: DataTypes.ENUM('active', 'inactive', 'on leave', 'terminated'),
     defaultValue: 'active',

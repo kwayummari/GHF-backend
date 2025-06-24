@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * ExpenseLine model
@@ -76,7 +76,7 @@ ExpenseLine.associate = (models) => {
     foreignKey: 'expense_report_id',
     as: 'expenseReport',
   });
-  
+
   ExpenseLine.belongsTo(models.Document, {
     foreignKey: 'document_id',
     as: 'document',

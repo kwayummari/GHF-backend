@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const {sequelize} = require('../config/dbConfig');
 
 /**
  * BudgetExpense model - Junction table linking budgets to expense reports
@@ -53,7 +53,7 @@ const BudgetExpense = sequelize.define('BudgetExpense', {
   timestamps: true,
   underscored: true,
   createdAt: 'created_at',
-  updatedAt: null,
+  updatedAt: 'updated_at',
 });
 
 // Model associations

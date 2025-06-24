@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const {sequelize} = require('../config/dbConfig');
 const { hashPassword } = require('../utils/hashUtils');
 
 /**
@@ -135,61 +135,78 @@ User.prototype.toJSON = function () {
 
 // Model associations
 User.associate = (models) => {
+  // User has one basic employee data
   User.hasOne(models.BasicEmployeeData, {
     foreignKey: 'user_id',
     as: 'basicEmployeeData',
   });
-  
+
+  // User has one bio data
   User.hasOne(models.BioData, {
     foreignKey: 'user_id',
     as: 'bioData',
   });
-  
+
+  // User has one personal employee data
   User.hasOne(models.PersonalEmployeeData, {
     foreignKey: 'user_id',
     as: 'personalEmployeeData',
   });
-  
+
+  // User has many emergency contacts
   User.hasMany(models.EmergencyContact, {
     foreignKey: 'user_id',
     as: 'emergencyContacts',
   });
-  
+
+  // User has many next of kin
   User.hasMany(models.NextOfKin, {
     foreignKey: 'user_id',
     as: 'nextOfKin',
   });
-  
+
+  // User has many leave applications
   User.hasMany(models.LeaveApplication, {
     foreignKey: 'user_id',
     as: 'leaveApplications',
   });
-  
+
+  // User has many attendance records
   User.hasMany(models.Attendance, {
     foreignKey: 'user_id',
     as: 'attendance',
   });
-  
+
+  // User has many documents (as owner)
   User.hasMany(models.Document, {
     foreignKey: 'user_id',
     as: 'documents',
   });
-  
+
+  // User has many documents (as uploader)
   User.hasMany(models.Document, {
     foreignKey: 'uploaded_by',
     as: 'uploadedDocuments',
   });
-  
+
+  // User has many objectives
   User.hasMany(models.Objective, {
     foreignKey: 'user_id',
     as: 'objectives',
   });
-  
+
+  // User belongs to many roles through UserRole
   User.belongsToMany(models.Role, {
     through: models.UserRole,
     foreignKey: 'user_id',
     otherKey: 'role_id',
     as: 'roles',
+  });
+
+  // User has many fingerprints
+  User.hasMany(models.Fingerprint, {
+    foreignKey: 'user_id',
+    as: 'fingerprints',
   });
 };
 

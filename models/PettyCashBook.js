@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * PettyCashBook model
@@ -84,12 +84,12 @@ PettyCashBook.associate = (models) => {
     foreignKey: 'user_id',
     as: 'user',
   });
-  
+
   PettyCashBook.hasMany(models.PettyCashExpense, {
     foreignKey: 'petty_cash_book_id',
     as: 'expenses',
   });
-  
+
   PettyCashBook.hasMany(models.ReplenishmentRequest, {
     foreignKey: 'petty_cash_book_id',
     as: 'replenishmentRequests',

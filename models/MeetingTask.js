@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * MeetingTask model
@@ -99,17 +99,17 @@ MeetingTask.associate = (models) => {
     foreignKey: 'meeting_id',
     as: 'meeting',
   });
-  
+
   MeetingTask.belongsTo(models.User, {
     foreignKey: 'raised_by_user_id',
     as: 'raisedBy',
   });
-  
+
   MeetingTask.belongsTo(models.User, {
     foreignKey: 'assigned_to_user_id',
     as: 'assignedTo',
   });
-  
+
   MeetingTask.belongsTo(models.User, {
     foreignKey: 'follow_up_person_user_id',
     as: 'followUpPerson',

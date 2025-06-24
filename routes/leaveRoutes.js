@@ -31,6 +31,30 @@ router.get('/types', authenticate, leaveController.getAllLeaveTypes);
 
 /**
  * @swagger
+ * /api/v1/leaves/balance/{userId?}:
+ *   get:
+ *     summary: Get leave balance for user
+ *     tags: [Leaves]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: integer
+ *         description: User ID (optional, defaults to current user)
+ *     responses:
+ *       200:
+ *         description: Leave balance retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - can only view own balance
+ */
+router.get('/balance/:userId?', authenticate, leaveController.getLeaveBalance);
+
+/**
+ * @swagger
  * /api/v1/leaves:
  *   post:
  *     summary: Create a new leave application

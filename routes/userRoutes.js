@@ -2,7 +2,7 @@ const express = require('express');
 const userController = require('../controllers/userController');
 const { authenticate, authorize } = require('../middlewares/authMiddleware');
 const validateRequest = require('../middlewares/validateRequest');
-const { updateUserValidator } = require('../validators/userValidator');
+const { updateUserValidator, createUserValidator } = require('../validators/userValidator');
 
 const router = express.Router();
 
@@ -246,5 +246,112 @@ router.put('/:id', authenticate, authorize(['Admin', 'HR Manager']), updateUserV
  *         description: User not found
  */
 router.delete('/:id', authenticate, authorize(['Admin']), userController.deleteUser);
+
+/**
+ * @swagger
+ * /api/v1/users:
+ *   post:
+ *     summary: Create a new user (admin function)
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - first_name
+ *               - sur_name
+ *               - email
+ *               - gender
+ *             properties:
+ *               first_name:
+ *                 type: string
+ *                 description: User's first name
+ *               middle_name:
+ *                 type: string
+ *                 description: User's middle name
+ *               sur_name:
+ *                 type: string
+ *                 description: User's surname
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: User's email address
+ *               phone_number:
+ *                 type: string
+ *                 description: User's phone number
+ *               gender:
+ *                 type: string
+ *                 enum: [Male, Female]
+ *                 description: User's gender
+ *               password:
+ *                 type: string
+ *                 description: User's password (required if generate_random_password is false)
+ *               generate_random_password:
+ *                 type: boolean
+ *                 description: Generate a random password for the user
+ *                 default: false
+ *               send_welcome_email:
+ *                 type: boolean
+ *                 description: Send welcome email to the user
+ *                 default: true
+ *               basic_employee_data:
+ *                 type: object
+ *                 description: Employee-specific data
+ *               bio_data:
+ *                 type: object
+ *                 description: Biographical data
+ *               personal_employee_data:
+ *                 type: object
+ *                 description: Personal employee information
+ *               emergency_contacts:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                     phone_number:
+ *                       type: string
+ *                     relationship:
+ *                       type: string
+ *                 description: Emergency contacts
+ *               next_of_kin:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                     phone_number:
+ *                       type: string
+ *                     percentage:
+ *                       type: integer
+ *                       minimum: 1
+ *                       maximum: 100
+ *                     relationship:
+ *                       type: string
+ *                 description: Next of kin (percentages must sum to 100%)
+ *               roles:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *                 description: Array of role IDs to assign to the user
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - insufficient permissions
+ *       409:
+ *         description: User already exists
+ */
+router.post('/', authenticate, authorize(['Admin', 'HR Manager']), createUserValidator, validateRequest, userController.createUser);
 
 module.exports = router;

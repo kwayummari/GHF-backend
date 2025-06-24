@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const {sequelize} = require('../config/dbConfig');
 
 /**
  * BioData model
@@ -38,6 +38,15 @@ const sequelize = require('../config/dbConfig');
  *           description: Blood group
  */
 const BioData = sequelize.define('BioData', {
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    primaryKey: true,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
   fingerprint_id: {
     type: DataTypes.STRING(100),
     allowNull: true,
@@ -70,6 +79,7 @@ const BioData = sequelize.define('BioData', {
   underscored: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
+  id: false
 });
 
 // Model associations

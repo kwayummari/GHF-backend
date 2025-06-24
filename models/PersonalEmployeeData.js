@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * PersonalEmployeeData model
@@ -24,6 +24,15 @@ const sequelize = require('../config/dbConfig');
  *           description: Employee's education level
  */
 const PersonalEmployeeData = sequelize.define('PersonalEmployeeData', {
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    primaryKey: true,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
   location: {
     type: DataTypes.TEXT,
     allowNull: false,
@@ -38,6 +47,7 @@ const PersonalEmployeeData = sequelize.define('PersonalEmployeeData', {
   underscored: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
+  id: false
 });
 
 // Model associations

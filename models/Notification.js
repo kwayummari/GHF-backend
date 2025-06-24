@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * Notification model
@@ -76,7 +76,7 @@ const Notification = sequelize.define('Notification', {
   timestamps: true,
   underscored: true,
   createdAt: 'created_at',
-  updatedAt: null,
+  updatedAt: 'updated_at',
 });
 
 // Model associations
@@ -85,7 +85,7 @@ Notification.associate = (models) => {
     foreignKey: 'receiver_user_id',
     as: 'receiver',
   });
-  
+
   Notification.belongsTo(models.User, {
     foreignKey: 'sender_user_id',
     as: 'sender',

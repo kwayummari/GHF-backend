@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * Increment model for salary increments
@@ -64,7 +64,7 @@ const Increment = sequelize.define('Increment', {
   timestamps: true,
   underscored: true,
   createdAt: 'created_at',
-  updatedAt: null,
+  updatedAt: 'updated_at',
 });
 
 // Model associations
@@ -73,17 +73,17 @@ Increment.associate = (models) => {
     foreignKey: 'user_id',
     as: 'user',
   });
-  
+
   Increment.belongsTo(models.FiscalYear, {
     foreignKey: 'fiscal_year_id',
     as: 'fiscalYear',
   });
-  
+
   Increment.belongsTo(models.User, {
     foreignKey: 'approved_by',
     as: 'approver',
   });
-  
+
   Increment.hasMany(models.Payroll, {
     foreignKey: 'increment_id',
     as: 'payrolls',

@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * HolidayList model
@@ -84,7 +84,7 @@ HolidayList.associate = (models) => {
     foreignKey: 'created_by',
     as: 'creator',
   });
-  
+
   HolidayList.belongsTo(models.User, {
     foreignKey: 'updated_by',
     as: 'updater',

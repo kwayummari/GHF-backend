@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * RolePermission model - Junction table for Role-Permission many-to-many relationship
@@ -80,11 +80,22 @@ RolePermission.associate = (models) => {
     foreignKey: 'created_by',
     as: 'creator',
   });
-  
+
   RolePermission.belongsTo(models.User, {
     foreignKey: 'updated_by',
     as: 'updater',
   });
+
+  RolePermission.belongsTo(models.Role, {
+    foreignKey: 'role_id',
+    as: 'role'
+  });
+
+  RolePermission.belongsTo(models.Permission, {
+    foreignKey: 'permission_id',
+    as: 'permission'
+  });
 };
+
 
 module.exports = RolePermission;

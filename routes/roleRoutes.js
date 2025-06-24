@@ -75,6 +75,64 @@ router.post('/', authenticate, authorize(['Admin']), roleValidator, validateRequ
 
 /**
  * @swagger
+ * /api/v1/roles/permissions:
+ *   get:
+ *     summary: Get all permissions
+ *     tags: [Roles]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of all permissions
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - insufficient permissions
+ */
+router.get('/permissions', authenticate, authorize(['Admin', 'HR Manager']), roleController.getAllPermissions);
+
+/**
+ * @swagger
+ * /api/v1/roles/assign:
+ *   post:
+ *     summary: Assign role to user
+ *     tags: [Roles]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *               - role_id
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *                 description: User ID
+ *               role_id:
+ *                 type: integer
+ *                 description: Role ID
+ *     responses:
+ *       200:
+ *         description: Role assigned to user successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - insufficient permissions
+ *       404:
+ *         description: User or role not found
+ *       409:
+ *         description: User already has this role
+ */
+router.post('/assign', authenticate, authorize(['Admin', 'HR Manager']), userRoleValidator, validateRequest, roleController.assignRoleToUser);
+
+/**
+ * @swagger
  * /api/v1/roles/{id}:
  *   get:
  *     summary: Get role by ID
@@ -180,64 +238,6 @@ router.delete('/:id', authenticate, authorize(['Admin']), roleController.deleteR
 
 /**
  * @swagger
- * /api/v1/roles/permissions:
- *   get:
- *     summary: Get all permissions
- *     tags: [Roles]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: List of all permissions
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden - insufficient permissions
- */
-router.get('/permissions', authenticate, authorize(['Admin', 'HR Manager']), roleController.getAllPermissions);
-
-/**
- * @swagger
- * /api/v1/roles/assign:
- *   post:
- *     summary: Assign role to user
- *     tags: [Roles]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - user_id
- *               - role_id
- *             properties:
- *               user_id:
- *                 type: integer
- *                 description: User ID
- *               role_id:
- *                 type: integer
- *                 description: Role ID
- *     responses:
- *       200:
- *         description: Role assigned to user successfully
- *       400:
- *         description: Validation error
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden - insufficient permissions
- *       404:
- *         description: User or role not found
- *       409:
- *         description: User already has this role
- */
-router.post('/assign', authenticate, authorize(['Admin', 'HR Manager']), userRoleValidator, validateRequest, roleController.assignRoleToUser);
-
-/**
- * @swagger
  * /api/v1/roles/users/{user_id}/roles/{role_id}:
  *   delete:
  *     summary: Remove role from user
@@ -270,5 +270,70 @@ router.post('/assign', authenticate, authorize(['Admin', 'HR Manager']), userRol
  *         description: User does not have this role
  */
 router.delete('/users/:user_id/roles/:role_id', authenticate, authorize(['Admin', 'HR Manager']), roleController.removeRoleFromUser);
+
+/**
+ * @swagger
+ * /api/v1/roles/{id}/menu-permissions:
+ *   get:
+ *     summary: Get role menu permissions
+ *     tags: [Roles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Role ID
+ *     responses:
+ *       200:
+ *         description: Role menu permissions retrieved successfully
+ *       404:
+ *         description: Role not found
+ */
+router.get('/:id/menu-permissions', authenticate, authorize(['Admin', 'HR Manager']), roleController.getRoleMenuPermissions);
+
+/**
+ * @swagger
+ * /api/v1/roles/{id}/menu-permissions:
+ *   put:
+ *     summary: Update role menu permissions
+ *     tags: [Roles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Role ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               permissions:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *               menu_permissions:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *               permission_ids:
+ *                 type: array
+ *                 items:
+ *                   type: integer
+ *     responses:
+ *       200:
+ *         description: Role menu permissions updated successfully
+ *       404:
+ *         description: Role not found
+ */
+router.put('/:id/menu-permissions', authenticate, authorize(['Admin']), roleController.updateRoleMenuPermissions);
 
 module.exports = router;
