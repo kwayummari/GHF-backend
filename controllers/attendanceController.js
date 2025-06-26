@@ -952,12 +952,40 @@ const submitMonthlyTimesheet = async (req, res, next) => {
       );
     }
 
+    // Check current approval status
+    const statusGroups = attendanceRecords.reduce((acc, record) => {
+      acc[record.approval_status] = (acc[record.approval_status] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Don't allow resubmission if already submitted (unless rejected)
+    if (statusGroups.submitted > 0) {
+      return errorResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        'Timesheet is already submitted and pending approval'
+      );
+    }
+
+    if (statusGroups.approved > 0) {
+      return errorResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        'Timesheet is already approved and cannot be resubmitted'
+      );
+    }
+
     // Update all attendance records to 'submitted' status
+    // Include both 'draft' and 'rejected' records for resubmission
     const [updatedCount] = await Attendance.update(
       {
         approval_status: 'submitted',
         submitted_at: new Date(),
-        submitted_by: requestingUserId
+        submitted_by: requestingUserId,
+        // Clear rejection data when resubmitting
+        rejected_at: null,
+        rejected_by: null,
+        rejection_reason: null
       },
       {
         where: {
@@ -968,21 +996,27 @@ const submitMonthlyTimesheet = async (req, res, next) => {
               endDate.toISOString().split('T')[0]
             ]
           },
-          approval_status: 'draft'
+          approval_status: ['draft', 'rejected'] // ← Fixed: Allow both draft and rejected
         }
       }
     );
 
+    // Determine if this is a resubmission
+    const isResubmission = statusGroups.rejected > 0;
+
     return successResponse(
       res,
       StatusCodes.OK,
-      'Monthly timesheet submitted for approval successfully',
+      isResubmission
+        ? 'Monthly timesheet resubmitted for approval successfully'
+        : 'Monthly timesheet submitted for approval successfully',
       {
         month,
         year,
         user_id: targetUserId,
         submitted_records: updatedCount,
-        total_records: attendanceRecords.length
+        total_records: attendanceRecords.length,
+        is_resubmission: isResubmission
       }
     );
   } catch (error) {
@@ -1281,7 +1315,7 @@ const approveMonthlyTimesheet = async (req, res, next) => {
 };
 
 /**
- * Reject monthly timesheet (bulk reject attendance records)
+ * Reject monthly timesheet (bulk reject attendance records) - DEBUG VERSION
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  * @param {Function} next - Express next function
@@ -1317,15 +1351,41 @@ const rejectMonthlyTimesheet = async (req, res, next) => {
     const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
     const endDate = new Date(parseInt(year), parseInt(month), 0);
 
+    // First, let's check what records exist before update
+    const existingRecords = await Attendance.findAll({
+      where: {
+        user_id: user_id,
+        date: {
+          [Op.between]: [
+            startDate.toISOString().split('T')[0],
+            endDate.toISOString().split('T')[0]
+          ]
+        },
+        approval_status: 'submitted'
+      }
+    });
+
+    if (existingRecords.length === 0) {
+      return errorResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        'No submitted attendance records found for rejection'
+      );
+    }
+
+    // Prepare update data
+    const updateData = {
+      approval_status: 'rejected',
+      rejected_at: new Date(),
+      rejected_by: rejectorId,
+      rejection_reason,
+      supervisor_comments: supervisor_comments || null
+    };
+
+
     // Update all submitted attendance records to 'rejected'
     const [updatedCount] = await Attendance.update(
-      {
-        approval_status: 'rejected',
-        rejected_at: new Date(),
-        rejected_by: rejectorId,
-        rejection_reason,
-        supervisor_comments: supervisor_comments || null
-      },
+      updateData,
       {
         where: {
           user_id: user_id,
@@ -1339,6 +1399,20 @@ const rejectMonthlyTimesheet = async (req, res, next) => {
         }
       }
     );
+
+    // Verify the update by checking the records again
+    const updatedRecords = await Attendance.findAll({
+      where: {
+        user_id: user_id,
+        date: {
+          [Op.between]: [
+            startDate.toISOString().split('T')[0],
+            endDate.toISOString().split('T')[0]
+          ]
+        },
+        approval_status: 'rejected'
+      }
+    });
 
     if (updatedCount === 0) {
       return errorResponse(
@@ -1358,10 +1432,16 @@ const rejectMonthlyTimesheet = async (req, res, next) => {
         year,
         rejected_records: updatedCount,
         rejected_by: rejectorId,
-        rejection_reason
+        rejection_reason,
+        debug_info: {
+          original_records: existingRecords.length,
+          updated_records: updatedRecords.length,
+          rejected_at: updateData.rejected_at
+        }
       }
     );
   } catch (error) {
+    console.error('Reject monthly timesheet error:', error);
     logger.error('Reject monthly timesheet error:', error);
     next(error);
   }
