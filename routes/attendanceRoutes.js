@@ -472,4 +472,236 @@ router.put('/holidays/:id', authenticate, authorize(['Admin', 'HR Manager']), ho
  */
 router.delete('/holidays/:id', authenticate, authorize(['Admin', 'HR Manager']), attendanceController.deleteHoliday);
 
+// Add these routes to your attendanceRoutes.js
+
+/**
+ * @swagger
+ * /api/v1/attendance/timesheet/submit:
+ *   post:
+ *     summary: Submit monthly timesheet for approval
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - month
+ *               - year
+ *             properties:
+ *               month:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 12
+ *               year:
+ *                 type: integer
+ *               user_id:
+ *                 type: integer
+ *                 description: User ID (for admin/HR submitting for others)
+ *     responses:
+ *       200:
+ *         description: Timesheet submitted successfully
+ *       400:
+ *         description: Incomplete timesheet or validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.post('/timesheet/submit', authenticate, attendanceController.submitMonthlyTimesheet);
+
+/**
+ * @swagger
+ * /api/v1/attendance/timesheet/team:
+ *   get:
+ *     summary: Get team timesheets for approval (supervisors)
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of records per page
+ *       - in: query
+ *         name: month
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 12
+ *         description: Filter by month
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         description: Filter by year
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [submitted, approved, rejected]
+ *           default: submitted
+ *         description: Filter by approval status
+ *       - in: query
+ *         name: department_id
+ *         schema:
+ *           type: integer
+ *         description: Filter by department
+ *     responses:
+ *       200:
+ *         description: Team timesheets retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/timesheet/team', authenticate, authorize(['Admin', 'HR Manager', 'Department Head']), attendanceController.getTeamTimesheetsForApproval);
+
+/**
+ * @swagger
+ * /api/v1/attendance/timesheet/approve:
+ *   post:
+ *     summary: Approve monthly timesheet
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *               - month
+ *               - year
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *               month:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 12
+ *               year:
+ *                 type: integer
+ *               supervisor_comments:
+ *                 type: string
+ *                 description: Optional comments from supervisor
+ *     responses:
+ *       200:
+ *         description: Timesheet approved successfully
+ *       400:
+ *         description: No submitted records found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.post('/timesheet/approve', authenticate, authorize(['Admin', 'HR Manager', 'Department Head']), attendanceController.approveMonthlyTimesheet);
+
+/**
+ * @swagger
+ * /api/v1/attendance/timesheet/reject:
+ *   post:
+ *     summary: Reject monthly timesheet
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - user_id
+ *               - month
+ *               - year
+ *               - rejection_reason
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *               month:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 12
+ *               year:
+ *                 type: integer
+ *               rejection_reason:
+ *                 type: string
+ *                 description: Reason for rejection (required)
+ *               supervisor_comments:
+ *                 type: string
+ *                 description: Additional comments from supervisor
+ *     responses:
+ *       200:
+ *         description: Timesheet rejected successfully
+ *       400:
+ *         description: Rejection reason required or no submitted records found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.post('/timesheet/reject', authenticate, authorize(['Admin', 'HR Manager', 'Department Head']), attendanceController.rejectMonthlyTimesheet);
+
+/**
+ * @swagger
+ * /api/v1/attendance/timesheet/payroll:
+ *   get:
+ *     summary: Get approved timesheets for payroll processing
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: month
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 12
+ *         description: Filter by month
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: integer
+ *         description: Filter by year
+ *       - in: query
+ *         name: department_id
+ *         schema:
+ *           type: integer
+ *         description: Filter by department
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Number of records per page
+ *     responses:
+ *       200:
+ *         description: Approved timesheets for payroll retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.get('/timesheet/payroll', authenticate, authorize(['Admin', 'HR Manager', 'Payroll Manager']), attendanceController.getApprovedTimesheetsForPayroll);
+
 module.exports = router;

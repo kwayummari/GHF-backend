@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const {sequelize} = require('../config/dbConfig');
+const { sequelize } = require('../config/dbConfig');
 
 /**
  * Attendance model
@@ -88,8 +88,53 @@ const Attendance = sequelize.define('Attendance', {
     allowNull: true,
   },
   approval_status: {
-    type: DataTypes.ENUM('draft', 'approved', 'rejected'),
+    type: DataTypes.ENUM('draft', 'submitted', 'approved', 'rejected'), // Added 'submitted'
     defaultValue: 'draft',
+  },
+  // ADD THESE MISSING FIELDS:
+  submitted_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  submitted_by: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id',
+    },
+  },
+  approved_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  approved_by: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id',
+    },
+  },
+  rejected_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
+  rejected_by: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'users',
+      key: 'id',
+    },
+  },
+  rejection_reason: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  supervisor_comments: {
+    type: DataTypes.TEXT,
+    allowNull: true,
   },
 }, {
   tableName: 'attendance',
@@ -110,6 +155,21 @@ Attendance.associate = (models) => {
   Attendance.belongsTo(models.User, {
     foreignKey: 'user_id',
     as: 'user',
+  });
+
+  Attendance.belongsTo(models.User, {
+    foreignKey: 'submitted_by',
+    as: 'submitter'
+  });
+
+  Attendance.belongsTo(models.User, {
+    foreignKey: 'approved_by',
+    as: 'approver'
+  });
+
+  Attendance.belongsTo(models.User, {
+    foreignKey: 'rejected_by',
+    as: 'rejector'
   });
 };
 
