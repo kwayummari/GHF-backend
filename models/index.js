@@ -38,6 +38,9 @@ const PettyCashExpense = require('./PettyCashExpense');
 const ReplenishmentRequest = require('./ReplenishmentRequest');
 const MeetingRecord = require('./MeetingRecord');
 const MeetingTask = require('./MeetingTask');
+const Meeting = require('./Meeting');
+const MeetingAttendee = require('./MeetingAtendee');
+const MeetingDocument = require('./MeetingDocument');
 const Notification = require('./Notification');
 const Objective = require('./Objective');
 const AppraisalForm = require('./AppraisalForm');
@@ -87,6 +90,9 @@ const models = {
   ReplenishmentRequest,
   MeetingRecord,
   MeetingTask,
+  Meeting,
+  MeetingAttendee,
+  MeetingDocument,
   Notification,
   Objective,
   AppraisalForm,

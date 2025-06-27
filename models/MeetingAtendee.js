@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const {sequelize} = require('../config/dbConfig');
 
 /**
  * MeetingAttendee model
@@ -41,10 +41,10 @@ const sequelize = require('../config/dbConfig');
  *         notes:
  *           type: string
  *           description: Additional notes
- *         createdAt:
+ *         created_at:
  *           type: string
  *           format: date-time
- *         updatedAt:
+ *         updated_at:
  *           type: string
  *           format: date-time
  */

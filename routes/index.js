@@ -8,11 +8,13 @@ const attendanceRoutes = require('./attendanceRoutes');
 const documentRoutes = require('./documentRoutes');
 const roleRoutes = require('./roleRoutes');
 const menuRoutes = require('./menuRoutes');
+const meetingRoutes = require('./meetingRoutes');
 
 const router = express.Router();
 
 // Register routes
 router.use('/auth', authRoutes);
+router.use('/meetings', meetingRoutes);
 router.use('/users', userRoutes);
 router.use('/timesheets', timesheetRoutes);
 router.use('/departments', departmentRoutes);
@@ -37,6 +39,7 @@ router.get('/', (req, res) => {
       documents: '/api/v1/documents',
       roles: '/api/v1/roles',
       menus: '/api/v1/menus',
+      meetings: '/api/v1/meetings',
     }
   });
 });

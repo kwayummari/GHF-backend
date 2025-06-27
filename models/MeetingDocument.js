@@ -1,5 +1,5 @@
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+const {sequelize} = require('../config/dbConfig');
 
 /**
  * MeetingDocument model
@@ -48,10 +48,10 @@ const sequelize = require('../config/dbConfig');
  *         is_public:
  *           type: boolean
  *           description: Whether document is accessible to all attendees
- *         createdAt:
+ *         created_at:
  *           type: string
  *           format: date-time
- *         updatedAt:
+ *         updated_at:
  *           type: string
  *           format: date-time
  */

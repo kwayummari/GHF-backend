@@ -5,7 +5,7 @@
 const { StatusCodes } = require('http-status-codes');
 const { Op, Sequelize } = require('sequelize');
 const Meeting = require('../models/Meeting');
-const MeetingAttendee = require('../models/MeetingAttendee');
+const MeetingAttendee = require('../models/MeetingAtendee');
 const MeetingTask = require('../models/MeetingTask');
 const MeetingDocument = require('../models/MeetingDocument');
 const User = require('../models/User');
@@ -94,7 +94,7 @@ const getAllMeetings = async (req, res, next) => {
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'firstName', 'lastName', 'email'],
+                    attributes: ['id', 'first_name', 'sur_name', 'email'],
                 },
             ],
             limit: parseInt(limit),
@@ -144,7 +144,7 @@ const getMeetingById = async (req, res, next) => {
                         {
                             model: User,
                             as: 'user',
-                            attributes: ['id', 'firstName', 'lastName', 'email'],
+                            attributes: ['id', 'first_name', 'sur_name', 'email'],
                         },
                     ],
                 },
@@ -155,7 +155,7 @@ const getMeetingById = async (req, res, next) => {
                         {
                             model: User,
                             as: 'assignedUser',
-                            attributes: ['id', 'firstName', 'lastName', 'email'],
+                            attributes: ['id', 'first_name', 'sur_name', 'email'],
                         },
                     ],
                 },
@@ -166,14 +166,14 @@ const getMeetingById = async (req, res, next) => {
                         {
                             model: User,
                             as: 'uploader',
-                            attributes: ['id', 'firstName', 'lastName'],
+                            attributes: ['id', 'first_name', 'sur_name'],
                         },
                     ],
                 },
                 {
                     model: User,
                     as: 'creator',
-                    attributes: ['id', 'firstName', 'lastName', 'email'],
+                    attributes: ['id', 'first_name', 'sur_name', 'email'],
                 },
             ],
         });
@@ -411,7 +411,7 @@ const getMeetingAttendees = async (req, res, next) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['id', 'firstName', 'lastName', 'email'],
+                    attributes: ['id', 'first_name', 'sur_name', 'email'],
                 },
             ],
             order: [['name', 'ASC']],
@@ -525,7 +525,7 @@ const getMeetingTasks = async (req, res, next) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'firstName', 'lastName', 'email'],
+                    attributes: ['id', 'first_name', 'sur_name', 'email'],
                 },
                 {
                     model: Meeting,
@@ -588,7 +588,7 @@ const getAllMeetingTasks = async (req, res, next) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'firstName', 'lastName', 'email'],
+                    attributes: ['id', 'first_name', 'sur_name', 'email'],
                 },
                 {
                     model: Meeting,
@@ -643,7 +643,7 @@ const createMeetingTask = async (req, res, next) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'firstName', 'lastName', 'email'],
+                    attributes: ['id', 'first_name', 'sur_name', 'email'],
                 },
                 {
                     model: Meeting,
@@ -691,7 +691,7 @@ const updateMeetingTask = async (req, res, next) => {
                 {
                     model: User,
                     as: 'assignedUser',
-                    attributes: ['id', 'firstName', 'lastName', 'email'],
+                    attributes: ['id', 'first_name', 'sur_name', 'email'],
                 },
                 {
                     model: Meeting,
@@ -992,7 +992,7 @@ const sendTaskAssignmentNotification = async (task) => {
                     meetingTitle: task.meeting.meeting_title,
                     dueDate: task.due_date,
                     priority: task.priority,
-                    assigneeName: `${task.assignedUser.firstName} ${task.assignedUser.lastName}`,
+                    assigneeName: `${task.assignedUser.first_name} ${task.assignedUser.sur_name}`,
                 },
             });
         }
