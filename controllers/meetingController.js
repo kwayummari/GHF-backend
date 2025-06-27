@@ -212,6 +212,8 @@ const createMeeting = async (req, res, next) => {
             attendees,
         } = req.body;
 
+        console.log('req.body:', req.body);
+
         const meetingData = {
             meeting_title,
             meeting_type,
