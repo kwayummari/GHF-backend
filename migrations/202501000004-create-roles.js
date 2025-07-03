@@ -29,13 +29,14 @@ module.exports = {
       }
     });
 
-    // Add initial roles
+    // Add initial roles with timestamps
+    const now = new Date();
     await queryInterface.bulkInsert('roles', [
-      { name: 'admin', description: 'Full system access' },
-      { name: 'manager', description: 'Department management' },
-      { name: 'employee', description: 'Basic user access' },
-      { name: 'hr', description: 'Human Resources access' },
-      { name: 'finance', description: 'Finance department access' }
+      { name: 'admin', description: 'Full system access', createdAt: now, updatedAt: now },
+      { name: 'manager', description: 'Department management', createdAt: now, updatedAt: now },
+      { name: 'employee', description: 'Basic user access', createdAt: now, updatedAt: now },
+      { name: 'hr', description: 'Human Resources access', createdAt: now, updatedAt: now },
+      { name: 'finance', description: 'Finance department access', createdAt: now, updatedAt: now }
     ], {});
   },
 

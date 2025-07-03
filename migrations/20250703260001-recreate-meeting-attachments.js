@@ -1,5 +1,9 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
+    // Drop existing table if it exists
+    await queryInterface.dropTable('meeting_attachments', { cascade: true });
+
+    // Create table without foreign keys first
     await queryInterface.createTable('meeting_attachments', {
       id: {
         allowNull: false,
@@ -9,13 +13,7 @@ module.exports = {
       },
       meeting_id: {
         type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'meetings',
-          key: 'id'
-        },
-        onUpdate: 'cascade',
-        onDelete: 'cascade'
+        allowNull: false
       },
       fileName: {
         type: Sequelize.STRING(255),
@@ -35,13 +33,7 @@ module.exports = {
       },
       uploadedBy: {
         type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'users',
-          key: 'id'
-        },
-        onUpdate: 'cascade',
-        onDelete: 'cascade'
+        allowNull: false
       },
       uploadDate: {
         type: Sequelize.DATE,

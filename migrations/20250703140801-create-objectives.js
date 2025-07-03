@@ -1,38 +1,13 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('meetings', {
+    await queryInterface.createTable('objectives', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      title: {
-        type: Sequelize.STRING(255),
-        allowNull: false
-      },
-      description: {
-        type: Sequelize.TEXT,
-        allowNull: true
-      },
-      startDate: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
-      endDate: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
-      location: {
-        type: Sequelize.STRING(255),
-        allowNull: true
-      },
-      status: {
-        type: Sequelize.ENUM('scheduled', 'in_progress', 'completed', 'cancelled'),
-        allowNull: false,
-        defaultValue: 'scheduled'
-      },
-      organizer_id: {
+      user_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -41,6 +16,32 @@ module.exports = {
         },
         onUpdate: 'cascade',
         onDelete: 'cascade'
+      },
+      title: {
+        type: Sequelize.STRING(255),
+        allowNull: false
+      },
+      description: {
+        type: Sequelize.TEXT,
+        allowNull: false
+      },
+      start_date: {
+        type: Sequelize.DATE,
+        allowNull: false
+      },
+      end_date: {
+        type: Sequelize.DATE,
+        allowNull: false
+      },
+      status: {
+        type: Sequelize.ENUM('pending', 'in_progress', 'completed', 'cancelled'),
+        allowNull: false,
+        defaultValue: 'pending'
+      },
+      progress: {
+        type: Sequelize.DECIMAL(5,2),
+        allowNull: false,
+        defaultValue: 0.00
       },
       department_id: {
         type: Sequelize.INTEGER,
@@ -65,11 +66,10 @@ module.exports = {
       }
     });
 
-    // Add foreign key constraints
-    await queryInterface.addConstraint('meetings', {
-      fields: ['organizer_id'],
+    await queryInterface.addConstraint('objectives', {
+      fields: ['user_id'],
       type: 'foreign key',
-      name: 'fk_meetings_organizer',
+      name: 'fk_objectives_user',
       references: {
         table: 'users',
         field: 'id'
@@ -78,10 +78,10 @@ module.exports = {
       onUpdate: 'cascade'
     });
 
-    await queryInterface.addConstraint('meetings', {
+    await queryInterface.addConstraint('objectives', {
       fields: ['department_id'],
       type: 'foreign key',
-      name: 'fk_meetings_department',
+      name: 'fk_objectives_department',
       references: {
         table: 'departments',
         field: 'id'
@@ -92,11 +92,8 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    // Remove foreign key constraints
-    await queryInterface.removeConstraint('meetings', 'fk_meetings_organizer');
-    await queryInterface.removeConstraint('meetings', 'fk_meetings_department');
-
-    // Drop table
-    await queryInterface.dropTable('meetings');
+    await queryInterface.removeConstraint('objectives', 'fk_objectives_user');
+    await queryInterface.removeConstraint('objectives', 'fk_objectives_department');
+    await queryInterface.dropTable('objectives');
   }
 };

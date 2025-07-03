@@ -1,6 +1,6 @@
 const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
 const config = require('./config');
-const User = require('../models/User');
+const { User } = require('../models');
 
 /**
  * Configure Passport with JWT strategy

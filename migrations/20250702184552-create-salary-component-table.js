@@ -50,28 +50,35 @@ module.exports = {
       }
     });
 
-    // Add initial salary components
+    // Add initial salary components with timestamps
+    const now = new Date();
     await queryInterface.bulkInsert('salary_components', [
       { 
         name: 'Basic Salary', 
         type: 'basic',
         isFixed: true,
         description: 'Base salary component',
-        isActive: true
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
       },
       { 
         name: 'Transport Allowance', 
         type: 'allowance',
         isFixed: true,
         description: 'Monthly transport allowance',
-        isActive: true
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
       },
       { 
         name: 'Medical Allowance', 
         type: 'allowance',
         isFixed: true,
         description: 'Monthly medical allowance',
-        isActive: true
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
       },
       { 
         name: 'Tax', 
@@ -79,7 +86,9 @@ module.exports = {
         isFixed: false,
         calculationMethod: 'percentage',
         description: 'Income tax deduction',
-        isActive: true
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
       },
       { 
         name: 'Social Security', 
@@ -87,7 +96,9 @@ module.exports = {
         isFixed: false,
         calculationMethod: 'percentage',
         description: 'Social security contribution',
-        isActive: true
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
       },
       { 
         name: 'Performance Bonus', 
@@ -95,7 +106,9 @@ module.exports = {
         isFixed: false,
         calculationMethod: 'percentage',
         description: 'Performance-based bonus',
-        isActive: true
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
       }
     ], {});
   },

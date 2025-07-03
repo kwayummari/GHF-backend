@@ -1,47 +1,50 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('meeting_minutes', {
+    await queryInterface.createTable('travel_advance_expenses', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      meeting_id: {
+      travel_advance_request_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'meetings',
+          model: 'travel_advance_requests',
           key: 'id'
         },
         onUpdate: 'cascade',
         onDelete: 'cascade'
       },
-      preparedBy: {
+      expense_line_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'users',
+          model: 'expense_lines',
           key: 'id'
         },
         onUpdate: 'cascade',
         onDelete: 'cascade'
       },
-      preparedDate: {
-        type: Sequelize.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.NOW
+      amount: {
+        type: Sequelize.DECIMAL(15,2),
+        allowNull: false
       },
-      content: {
+      description: {
         type: Sequelize.TEXT,
         allowNull: false
       },
-      status: {
-        type: Sequelize.ENUM('draft', 'approved', 'rejected'),
-        allowNull: false,
-        defaultValue: 'draft'
+      receipt_path: {
+        type: Sequelize.STRING(255),
+        allowNull: true
       },
-      approvedBy: {
+      status: {
+        type: Sequelize.ENUM('pending', 'approved', 'rejected'),
+        allowNull: false,
+        defaultValue: 'pending'
+      },
+      approved_by: {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: {
@@ -51,7 +54,7 @@ module.exports = {
         onUpdate: 'cascade',
         onDelete: 'set null'
       },
-      approvedDate: {
+      approved_at: {
         type: Sequelize.DATE,
         allowNull: true
       },
@@ -68,35 +71,34 @@ module.exports = {
       }
     });
 
-    // Add foreign key constraints
-    await queryInterface.addConstraint('meeting_minutes', {
-      fields: ['meeting_id'],
+    await queryInterface.addConstraint('travel_advance_expenses', {
+      fields: ['travel_advance_request_id'],
       type: 'foreign key',
-      name: 'fk_meeting_minutes_meeting',
+      name: 'fk_travel_advance_expenses_travel_advance_request',
       references: {
-        table: 'meetings',
+        table: 'travel_advance_requests',
         field: 'id'
       },
       onDelete: 'cascade',
       onUpdate: 'cascade'
     });
 
-    await queryInterface.addConstraint('meeting_minutes', {
-      fields: ['preparedBy'],
+    await queryInterface.addConstraint('travel_advance_expenses', {
+      fields: ['expense_line_id'],
       type: 'foreign key',
-      name: 'fk_meeting_minutes_preparer',
+      name: 'fk_travel_advance_expenses_expense_line',
       references: {
-        table: 'users',
+        table: 'expense_lines',
         field: 'id'
       },
       onDelete: 'cascade',
       onUpdate: 'cascade'
     });
 
-    await queryInterface.addConstraint('meeting_minutes', {
-      fields: ['approvedBy'],
+    await queryInterface.addConstraint('travel_advance_expenses', {
+      fields: ['approved_by'],
       type: 'foreign key',
-      name: 'fk_meeting_minutes_approver',
+      name: 'fk_travel_advance_expenses_approved_by',
       references: {
         table: 'users',
         field: 'id'
@@ -107,12 +109,9 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    // Remove foreign key constraints
-    await queryInterface.removeConstraint('meeting_minutes', 'fk_meeting_minutes_meeting');
-    await queryInterface.removeConstraint('meeting_minutes', 'fk_meeting_minutes_preparer');
-    await queryInterface.removeConstraint('meeting_minutes', 'fk_meeting_minutes_approver');
-
-    // Drop table
-    await queryInterface.dropTable('meeting_minutes');
+    await queryInterface.removeConstraint('travel_advance_expenses', 'fk_travel_advance_expenses_travel_advance_request');
+    await queryInterface.removeConstraint('travel_advance_expenses', 'fk_travel_advance_expenses_expense_line');
+    await queryInterface.removeConstraint('travel_advance_expenses', 'fk_travel_advance_expenses_approved_by');
+    await queryInterface.dropTable('travel_advance_expenses');
   }
 };

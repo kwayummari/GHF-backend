@@ -1,5 +1,9 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+
+const { DataTypes, Sequelize } = require('sequelize');
+const dbConfig = require('../config/database');
+
+// Initialize Sequelize
+const sequelize = new Sequelize(dbConfig.development);
 
 const MeetingTask = sequelize.define('MeetingTask', {
   id: {

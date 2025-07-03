@@ -162,13 +162,6 @@ module.exports = {
       }
     });
 
-    // Add unique constraint on date
-    await queryInterface.addConstraint('attendance_statistics', {
-      fields: ['date'],
-      type: 'unique',
-      name: 'unique_date_attendance_statistics'
-    });
-
     // Add foreign key constraints
     await queryInterface.addConstraint('users', {
       fields: ['department_id'],
@@ -214,20 +207,57 @@ module.exports = {
         table: 'users',
         field: 'id'
       },
-      onDelete: 'cascade',
+      onDelete: 'set null',
       onUpdate: 'cascade'
     });
+
+    // Remove old unique constraint if it exists
+    try {
+      await queryInterface.removeConstraint('attendance_statistics', 'unique_date_attendance_statistics');
+    } catch (error) {
+      // If constraint doesn't exist, ignore error
+      if (error.name === 'SequelizeDatabaseError' && error.message.includes('doesn\'t exist')) {
+        console.log('Old unique constraint not found, continuing...');
+      } else {
+        throw error;
+      }
+    }
+
+    // Add new unique constraint
+    try {
+      await queryInterface.addConstraint('attendance_statistics', {
+        fields: ['date'],
+        type: 'unique',
+        name: 'unique_attendance_statistics_date'
+      });
+    } catch (error) {
+      // If constraint already exists, skip this step
+      if (error.name === 'SequelizeDatabaseError' && error.message.includes('already exists')) {
+        console.log('Unique constraint on attendance_statistics.date already exists, skipping');
+      } else {
+        throw error;
+      }
+    }
   },
 
   down: async (queryInterface, Sequelize) => {
-    // Remove constraints
-    await queryInterface.removeConstraint('users', 'fk_users_department');
-    await queryInterface.removeConstraint('attendance', 'fk_attendance_user');
-    await queryInterface.removeConstraint('attendance', 'fk_attendance_created_by');
-    await queryInterface.removeConstraint('attendance', 'fk_attendance_updated_by');
-    await queryInterface.removeConstraint('attendance_statistics', 'unique_date');
+    // Remove constraints in reverse order
+    try {
+      await queryInterface.removeConstraint('attendance_statistics', 'unique_attendance_statistics_date');
+    } catch (error) {
+      if (error.name === 'SequelizeDatabaseError' && error.message.includes('doesn\'t exist')) {
+        console.log('Unique constraint not found, continuing...');
+      } else {
+        throw error;
+      }
+    }
 
-    // Drop tables
+    await queryInterface.removeConstraint('attendance', 'fk_attendance_updated_by');
+    await queryInterface.removeConstraint('attendance', 'fk_attendance_created_by');
+    await queryInterface.removeConstraint('attendance', 'fk_attendance_user');
+    await queryInterface.removeConstraint('users', 'fk_users_department');
+
+    // Drop tables in reverse order
     await queryInterface.dropTable('attendance_statistics');
     await queryInterface.dropTable('attendance');
     await queryInterface.dropTable('users');

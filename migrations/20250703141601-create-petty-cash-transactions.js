@@ -1,31 +1,44 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.createTable('meeting_tasks', {
+    await queryInterface.createTable('petty_cash_transactions', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      meeting_id: {
+      petty_cash_book_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'meetings',
+          model: 'petty_cash_books',
           key: 'id'
         },
         onUpdate: 'cascade',
         onDelete: 'cascade'
       },
-      title: {
-        type: Sequelize.STRING(255),
+      transaction_type: {
+        type: Sequelize.ENUM('debit', 'credit'),
+        allowNull: false
+      },
+      amount: {
+        type: Sequelize.DECIMAL(15,2),
         allowNull: false
       },
       description: {
         type: Sequelize.TEXT,
+        allowNull: false
+      },
+      reference_number: {
+        type: Sequelize.STRING(50),
         allowNull: true
       },
-      assignee_id: {
+      transaction_date: {
+        type: Sequelize.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.NOW
+      },
+      user_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -35,25 +48,12 @@ module.exports = {
         onUpdate: 'cascade',
         onDelete: 'cascade'
       },
-      dueDate: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
       status: {
-        type: Sequelize.ENUM('pending', 'in_progress', 'completed', 'overdue'),
+        type: Sequelize.ENUM('pending', 'approved', 'rejected'),
         allowNull: false,
         defaultValue: 'pending'
       },
-      priority: {
-        type: Sequelize.ENUM('low', 'medium', 'high'),
-        allowNull: false,
-        defaultValue: 'medium'
-      },
-      completedDate: {
-        type: Sequelize.DATE,
-        allowNull: true
-      },
-      completedBy: {
+      approved_by: {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: {
@@ -62,6 +62,10 @@ module.exports = {
         },
         onUpdate: 'cascade',
         onDelete: 'set null'
+      },
+      approved_at: {
+        type: Sequelize.DATE,
+        allowNull: true
       },
       createdAt: {
         allowNull: false,
@@ -76,23 +80,22 @@ module.exports = {
       }
     });
 
-    // Add foreign key constraints
-    await queryInterface.addConstraint('meeting_tasks', {
-      fields: ['meeting_id'],
+    await queryInterface.addConstraint('petty_cash_transactions', {
+      fields: ['petty_cash_book_id'],
       type: 'foreign key',
-      name: 'fk_meeting_tasks_meeting',
+      name: 'fk_petty_cash_transactions_petty_cash_book',
       references: {
-        table: 'meetings',
+        table: 'petty_cash_books',
         field: 'id'
       },
       onDelete: 'cascade',
       onUpdate: 'cascade'
     });
 
-    await queryInterface.addConstraint('meeting_tasks', {
-      fields: ['assignee_id'],
+    await queryInterface.addConstraint('petty_cash_transactions', {
+      fields: ['user_id'],
       type: 'foreign key',
-      name: 'fk_meeting_tasks_assignee',
+      name: 'fk_petty_cash_transactions_user',
       references: {
         table: 'users',
         field: 'id'
@@ -101,10 +104,10 @@ module.exports = {
       onUpdate: 'cascade'
     });
 
-    await queryInterface.addConstraint('meeting_tasks', {
-      fields: ['completedBy'],
+    await queryInterface.addConstraint('petty_cash_transactions', {
+      fields: ['approved_by'],
       type: 'foreign key',
-      name: 'fk_meeting_tasks_completer',
+      name: 'fk_petty_cash_transactions_approved_by',
       references: {
         table: 'users',
         field: 'id'
@@ -115,12 +118,9 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    // Remove foreign key constraints
-    await queryInterface.removeConstraint('meeting_tasks', 'fk_meeting_tasks_meeting');
-    await queryInterface.removeConstraint('meeting_tasks', 'fk_meeting_tasks_assignee');
-    await queryInterface.removeConstraint('meeting_tasks', 'fk_meeting_tasks_completer');
-
-    // Drop table
-    await queryInterface.dropTable('meeting_tasks');
+    await queryInterface.removeConstraint('petty_cash_transactions', 'fk_petty_cash_transactions_petty_cash_book');
+    await queryInterface.removeConstraint('petty_cash_transactions', 'fk_petty_cash_transactions_user');
+    await queryInterface.removeConstraint('petty_cash_transactions', 'fk_petty_cash_transactions_approved_by');
+    await queryInterface.dropTable('petty_cash_transactions');
   }
 };

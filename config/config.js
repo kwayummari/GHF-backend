@@ -3,6 +3,11 @@ const { StatusCodes } = require('http-status-codes');
 
 // Default configuration
 const config = {
+  // JWT Configuration
+  JWT: {
+    SECRET: process.env.JWT_SECRET || 'your-secret-key-here',
+    EXPIRES_IN: process.env.JWT_EXPIRES_IN || '24h'
+  },
   NODE_ENV: process.env.NODE_ENV || 'development',
   PORT: parseInt(process.env.PORT, 10) || 3000,
   API_VERSION: process.env.API_VERSION || 'v1',

@@ -1,5 +1,10 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/dbConfig');
+
+const { DataTypes, Sequelize } = require('sequelize');
+const dbConfig = require('../config/database');
+
+// Initialize Sequelize
+const sequelize = new Sequelize(dbConfig.development);
+
 
 /**
  * Department Model

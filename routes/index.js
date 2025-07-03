@@ -4,7 +4,8 @@ const userRoutes = require('./userRoutes');
 const financeRoutes = require('./financeRoutes');
 const requisitionRoutes = require('./requisitionRoutes');
 const payrollRoutes = require('./payrollRoutes');
-// Import other route modules here
+const pettyCashRoutes = require('./pettyCashRoutes');
+const travelAdvanceRoutes = require('./travelAdvanceRoutes');
 
 const router = express.Router();
 
@@ -14,9 +15,9 @@ router.use('/users', userRoutes);
 router.use('/finance', financeRoutes);
 router.use('/requisitions', requisitionRoutes);
 router.use('/payroll', payrollRoutes);
-// Register other routes here
-// router.use('/products', productRoutes);
-// etc.
+router.use('/leave', require('./leaveRoutes'));
+router.use('/petty-cash', pettyCashRoutes);
+router.use('/travel-advance', travelAdvanceRoutes);
 
 // Root API information route
 router.get('/', (req, res) => {
@@ -29,7 +30,9 @@ router.get('/', (req, res) => {
       users: '/api/v1/users',
       finance: '/api/v1/finance',
       requisitions: '/api/v1/requisitions',
-      payroll: '/api/v1/payroll'
+      payroll: '/api/v1/payroll',
+      'petty-cash': '/api/v1/petty-cash',
+      'travel-advance': '/api/v1/travel-advance'
     }
   });
 });

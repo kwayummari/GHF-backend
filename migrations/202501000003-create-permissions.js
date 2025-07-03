@@ -29,13 +29,14 @@ module.exports = {
       }
     });
 
-    // Add initial permissions
+    // Add initial permissions with timestamps
+    const now = new Date();
     await queryInterface.bulkInsert('permissions', [
-      { name: 'view_dashboard', description: 'Can view dashboard' },
-      { name: 'manage_users', description: 'Can manage users' },
-      { name: 'manage_departments', description: 'Can manage departments' },
-      { name: 'manage_roles', description: 'Can manage roles' },
-      { name: 'manage_permissions', description: 'Can manage permissions' }
+      { name: 'view_dashboard', description: 'Can view dashboard', createdAt: now, updatedAt: now },
+      { name: 'manage_users', description: 'Can manage users', createdAt: now, updatedAt: now },
+      { name: 'manage_departments', description: 'Can manage departments', createdAt: now, updatedAt: now },
+      { name: 'manage_roles', description: 'Can manage roles', createdAt: now, updatedAt: now },
+      { name: 'manage_permissions', description: 'Can manage permissions', createdAt: now, updatedAt: now }
     ], {});
   },
 
