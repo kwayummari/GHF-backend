@@ -56,7 +56,7 @@ const { hashPassword } = require('../utils/hashUtils');
 const User = sequelize.define('User', {
   username: {
     type: DataTypes.STRING(30),
-    allowNull: false,
+    allowNull: true, // Temporarily allow null to avoid sync issues
     unique: true,
     validate: {
       len: [3, 30],
@@ -78,28 +78,32 @@ const User = sequelize.define('User', {
       len: [8, 100],
     },
   },
-  firstName: {
+  first_name: {
     type: DataTypes.STRING(50),
     allowNull: false,
   },
-  lastName: {
+  last_name: {
     type: DataTypes.STRING(50),
     allowNull: false,
   },
   role: {
-    type: DataTypes.ENUM('user', 'admin'),
+    type: DataTypes.ENUM('user', 'admin', 'finance_manager', 'hr_manager', 'department_head'),
     defaultValue: 'user',
   },
-  isActive: {
+  is_active: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,
   },
-  lastLogin: {
+  last_login: {
     type: DataTypes.DATE,
     allowNull: true,
   },
 }, {
   tableName: 'users',
+  timestamps: true,
+  underscored: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
   // Hash password before saving
   hooks: {
     beforeCreate: async (user) => {
@@ -122,8 +126,53 @@ User.prototype.toJSON = function () {
 
 // Model associations
 User.associate = (models) => {
-  // Define associations here
-  // Example: User.hasMany(models.Post);
+  // Department association
+  User.belongsTo(models.Department, {
+    foreignKey: 'department_id',
+    as: 'department',
+  });
+  
+  // Basic employee data association
+  User.hasOne(models.BasicEmployeeData, {
+    foreignKey: 'user_id',
+    as: 'basicData',
+  });
+  
+  // Salary components association
+  User.hasMany(models.SalaryComponent, {
+    foreignKey: 'user_id',
+    as: 'salaryComponents',
+  });
+  
+  // Payroll records association
+  User.hasMany(models.Payroll, {
+    foreignKey: 'employee_id',
+    as: 'payrolls',
+  });
+  
+  // Created payrolls association
+  User.hasMany(models.Payroll, {
+    foreignKey: 'created_by',
+    as: 'createdPayrolls',
+  });
+  
+  // Updated payrolls association
+  User.hasMany(models.Payroll, {
+    foreignKey: 'updated_by',
+    as: 'updatedPayrolls',
+  });
+  
+  // Approved payrolls association
+  User.hasMany(models.Payroll, {
+    foreignKey: 'approved_by',
+    as: 'approvedPayrolls',
+  });
+  
+  // Rejected payrolls association
+  User.hasMany(models.Payroll, {
+    foreignKey: 'rejected_by',
+    as: 'rejectedPayrolls',
+  });
 };
 
 module.exports = User;

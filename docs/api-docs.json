@@ -28,6 +28,603 @@
       }
     },
     "schemas": {
+      "Asset": {
+        "type": "object",
+        "required": [
+          "asset_code",
+          "asset_name",
+          "category",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Asset ID"
+          },
+          "asset_code": {
+            "type": "string",
+            "description": "Unique asset code"
+          },
+          "asset_name": {
+            "type": "string",
+            "description": "Asset name/description"
+          },
+          "asset_tag": {
+            "type": "string",
+            "description": "Physical asset tag"
+          },
+          "category": {
+            "type": "string",
+            "description": "Asset category (IT Equipment, Furniture, Vehicle, etc.)"
+          },
+          "subcategory": {
+            "type": "string",
+            "description": "Asset subcategory"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "inactive",
+              "maintenance",
+              "disposed",
+              "lost"
+            ],
+            "description": "Asset status"
+          },
+          "location": {
+            "type": "string",
+            "description": "Current location"
+          },
+          "department_id": {
+            "type": "integer",
+            "description": "Department ID"
+          },
+          "custodian_id": {
+            "type": "integer",
+            "description": "User ID of custodian"
+          },
+          "purchase_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Date of purchase"
+          },
+          "purchase_cost": {
+            "type": "number",
+            "description": "Purchase cost"
+          },
+          "current_value": {
+            "type": "number",
+            "description": "Current estimated value"
+          },
+          "supplier_id": {
+            "type": "integer",
+            "description": "Supplier ID"
+          },
+          "warranty_expiry": {
+            "type": "string",
+            "format": "date",
+            "description": "Warranty expiry date"
+          },
+          "serial_number": {
+            "type": "string",
+            "description": "Serial number"
+          },
+          "model": {
+            "type": "string",
+            "description": "Model information"
+          },
+          "manufacturer": {
+            "type": "string",
+            "description": "Manufacturer"
+          },
+          "description": {
+            "type": "string",
+            "description": "Additional description"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes"
+          },
+          "created_by": {
+            "type": "integer",
+            "description": "User ID who created this asset"
+          }
+        }
+      },
+      "AssetMaintenance": {
+        "type": "object",
+        "required": [
+          "asset_id",
+          "maintenance_type",
+          "title",
+          "scheduled_date"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Maintenance record ID"
+          },
+          "maintenance_number": {
+            "type": "string",
+            "description": "Unique maintenance number"
+          },
+          "asset_id": {
+            "type": "integer",
+            "description": "Asset ID"
+          },
+          "maintenance_type": {
+            "type": "string",
+            "enum": [
+              "preventive",
+              "corrective",
+              "emergency"
+            ],
+            "description": "Type of maintenance"
+          },
+          "title": {
+            "type": "string",
+            "description": "Maintenance title"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description"
+          },
+          "scheduled_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Scheduled maintenance date"
+          },
+          "completed_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Actual completion date"
+          },
+          "estimated_duration": {
+            "type": "string",
+            "description": "Estimated duration (e.g., \"2 hours\")"
+          },
+          "actual_duration": {
+            "type": "string",
+            "description": "Actual duration taken"
+          },
+          "estimated_cost": {
+            "type": "number",
+            "description": "Estimated cost"
+          },
+          "actual_cost": {
+            "type": "number",
+            "description": "Actual cost incurred"
+          },
+          "assigned_to": {
+            "type": "string",
+            "description": "Person/team assigned"
+          },
+          "vendor_id": {
+            "type": "string",
+            "description": "Vendor ID (or \"internal\" for internal maintenance)"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ],
+            "description": "Maintenance priority"
+          },
+          "maintenance_category": {
+            "type": "string",
+            "description": "Category of maintenance"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "scheduled",
+              "in_progress",
+              "completed",
+              "cancelled"
+            ],
+            "description": "Maintenance status"
+          },
+          "completion_percentage": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Completion percentage"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes"
+          },
+          "completion_notes": {
+            "type": "string",
+            "description": "Notes upon completion"
+          },
+          "created_by": {
+            "type": "integer",
+            "description": "User ID who created this record"
+          },
+          "completed_by": {
+            "type": "integer",
+            "description": "User ID who completed the maintenance"
+          }
+        }
+      },
+      "Permission": {
+        "type": "object",
+        "required": [
+          "name",
+          "module",
+          "action"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Permission ID"
+          },
+          "name": {
+            "type": "string",
+            "description": "Permission name"
+          },
+          "module": {
+            "type": "string",
+            "description": "Module this permission applies to"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "read",
+              "update",
+              "delete"
+            ],
+            "description": "Action type for this permission"
+          },
+          "description": {
+            "type": "string",
+            "description": "Permission description"
+          }
+        }
+      },
+      "PurchaseRequest": {
+        "type": "object",
+        "required": [
+          "title",
+          "department_id",
+          "requested_by",
+          "priority",
+          "required_date",
+          "estimated_cost"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Purchase request ID"
+          },
+          "requisition_number": {
+            "type": "string",
+            "description": "Unique requisition number"
+          },
+          "title": {
+            "type": "string",
+            "description": "Purchase request title"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description"
+          },
+          "department_id": {
+            "type": "integer",
+            "description": "Department ID"
+          },
+          "requested_by": {
+            "type": "integer",
+            "description": "User ID who requested"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ],
+            "description": "Priority level"
+          },
+          "required_date": {
+            "type": "string",
+            "format": "date",
+            "description": "Required delivery date"
+          },
+          "estimated_cost": {
+            "type": "number",
+            "description": "Estimated total cost"
+          },
+          "actual_cost": {
+            "type": "number",
+            "description": "Actual cost after procurement"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "pending",
+              "approved",
+              "rejected",
+              "cancelled"
+            ],
+            "description": "Request status"
+          },
+          "approval_stage": {
+            "type": "integer",
+            "description": "Current approval stage"
+          },
+          "total_stages": {
+            "type": "integer",
+            "description": "Total approval stages"
+          },
+          "budget_id": {
+            "type": "integer",
+            "description": "Budget ID"
+          },
+          "justification": {
+            "type": "string",
+            "description": "Business justification"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Additional notes"
+          },
+          "approved_by": {
+            "type": "integer",
+            "description": "User ID who approved"
+          },
+          "approved_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Approval date"
+          },
+          "rejected_by": {
+            "type": "integer",
+            "description": "User ID who rejected"
+          },
+          "rejected_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Rejection date"
+          },
+          "rejection_reason": {
+            "type": "string",
+            "description": "Reason for rejection"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Submission date"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation date"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update date"
+          }
+        }
+      },
+      "RequisitionAttachment": {
+        "type": "object",
+        "required": [
+          "purchase_request_id",
+          "filename",
+          "file_path",
+          "file_size",
+          "uploaded_by"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Attachment ID"
+          },
+          "purchase_request_id": {
+            "type": "integer",
+            "description": "Purchase request ID"
+          },
+          "filename": {
+            "type": "string",
+            "description": "Original filename"
+          },
+          "file_path": {
+            "type": "string",
+            "description": "File path on server"
+          },
+          "file_size": {
+            "type": "integer",
+            "description": "File size in bytes"
+          },
+          "mime_type": {
+            "type": "string",
+            "description": "MIME type"
+          },
+          "description": {
+            "type": "string",
+            "description": "File description"
+          },
+          "category": {
+            "type": "string",
+            "description": "File category"
+          },
+          "uploaded_by": {
+            "type": "integer",
+            "description": "User ID who uploaded"
+          },
+          "upload_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Upload date"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation date"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update date"
+          }
+        }
+      },
+      "RequisitionItem": {
+        "type": "object",
+        "required": [
+          "purchase_request_id",
+          "item_name",
+          "quantity",
+          "unit_price"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Item ID"
+          },
+          "purchase_request_id": {
+            "type": "integer",
+            "description": "Purchase request ID"
+          },
+          "item_name": {
+            "type": "string",
+            "description": "Item name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Item description"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Quantity required"
+          },
+          "unit_price": {
+            "type": "number",
+            "description": "Unit price"
+          },
+          "total_price": {
+            "type": "number",
+            "description": "Total price (quantity * unit_price)"
+          },
+          "specifications": {
+            "type": "string",
+            "description": "Technical specifications"
+          },
+          "category": {
+            "type": "string",
+            "description": "Item category"
+          },
+          "supplier_preference": {
+            "type": "string",
+            "description": "Preferred supplier"
+          },
+          "brand": {
+            "type": "string",
+            "description": "Brand preference"
+          },
+          "model": {
+            "type": "string",
+            "description": "Model preference"
+          },
+          "unit_of_measure": {
+            "type": "string",
+            "description": "Unit of measure"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation date"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update date"
+          }
+        }
+      },
+      "RequisitionWorkflow": {
+        "type": "object",
+        "required": [
+          "purchase_request_id",
+          "stage",
+          "approver_role",
+          "approver_id",
+          "action"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Workflow record ID"
+          },
+          "purchase_request_id": {
+            "type": "integer",
+            "description": "Purchase request ID"
+          },
+          "stage": {
+            "type": "integer",
+            "description": "Approval stage number"
+          },
+          "stage_name": {
+            "type": "string",
+            "description": "Stage name"
+          },
+          "approver_role": {
+            "type": "string",
+            "description": "Approver role"
+          },
+          "approver_id": {
+            "type": "integer",
+            "description": "User ID of approver"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "rejected",
+              "returned",
+              "forwarded"
+            ],
+            "description": "Action taken"
+          },
+          "comments": {
+            "type": "string",
+            "description": "Comments from approver"
+          },
+          "conditions": {
+            "type": "string",
+            "description": "Conditions attached to approval"
+          },
+          "next_approver_id": {
+            "type": "integer",
+            "description": "Next approver ID"
+          },
+          "completed_date": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Completion date"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation date"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update date"
+          }
+        }
+      },
       "User": {
         "type": "object",
         "required": [
@@ -370,7 +967,3975 @@
           }
         }
       }
+    },
+    "/api/v1/finance/budgets": {
+      "get": {
+        "summary": "Get all budgets",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "submitted",
+                "approved",
+                "rejected"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "department_id",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "quarter_id",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budgets retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new budget",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "quarter_id",
+                  "department_id",
+                  "activity_name",
+                  "responsible_person_id",
+                  "amount"
+                ],
+                "properties": {
+                  "quarter_id": {
+                    "type": "integer"
+                  },
+                  "department_id": {
+                    "type": "integer"
+                  },
+                  "activity_name": {
+                    "type": "string"
+                  },
+                  "responsible_person_id": {
+                    "type": "integer"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Budget created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/{id}": {
+      "get": {
+        "summary": "Get budget by ID",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budget retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update budget",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budget updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete budget",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budget deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/{id}/approve": {
+      "put": {
+        "summary": "Approve budget",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budget approved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/expense-reports": {
+      "get": {
+        "summary": "Get all expense reports",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Expense reports retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create expense report",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "travel_advance_request_id",
+                  "date",
+                  "expense_title",
+                  "expense_amount",
+                  "deadline"
+                ],
+                "properties": {
+                  "travel_advance_request_id": {
+                    "type": "integer"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "expense_title": {
+                    "type": "string"
+                  },
+                  "expense_amount": {
+                    "type": "number"
+                  },
+                  "deadline": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Expense report created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/expense-reports/{id}": {
+      "get": {
+        "summary": "Get expense report by ID",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Expense report retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update expense report",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Expense report updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete expense report",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Expense report deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/expense-reports/{id}/approve": {
+      "put": {
+        "summary": "Approve expense report",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Expense report approved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/purchase-requests": {
+      "get": {
+        "summary": "Get all purchase requests",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase requests retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create purchase request",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "item",
+                  "budget_id",
+                  "requester_id",
+                  "quantity"
+                ],
+                "properties": {
+                  "item": {
+                    "type": "string"
+                  },
+                  "budget_id": {
+                    "type": "integer"
+                  },
+                  "requester_id": {
+                    "type": "integer"
+                  },
+                  "quantity": {
+                    "type": "integer"
+                  },
+                  "estimated_cost": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Purchase request created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/purchase-requests/{id}": {
+      "get": {
+        "summary": "Get purchase request by ID",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase request retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update purchase request",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase request updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete purchase request",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase request deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/purchase-requests/{id}/approve": {
+      "put": {
+        "summary": "Approve purchase request",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase request approved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/suppliers": {
+      "get": {
+        "summary": "Get all suppliers",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Suppliers retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create supplier",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "supplier_id",
+                  "name",
+                  "type"
+                ],
+                "properties": {
+                  "supplier_id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "individual",
+                      "company"
+                    ]
+                  },
+                  "tax_id": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "phone_number": {
+                    "type": "string"
+                  },
+                  "contact_person": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Supplier created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/suppliers/{id}": {
+      "get": {
+        "summary": "Get supplier by ID",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Supplier retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update supplier",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Supplier updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete supplier",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Supplier deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/quotations": {
+      "get": {
+        "summary": "Get all quotations",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Quotations retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create quotation",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "supplier_id",
+                  "date",
+                  "procurement_title",
+                  "amount",
+                  "submitted_by"
+                ],
+                "properties": {
+                  "supplier_id": {
+                    "type": "integer"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "procurement_title": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "currency": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "submitted_by": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Quotation created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/quotations/{id}": {
+      "get": {
+        "summary": "Get quotation by ID",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Quotation retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update quotation",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Quotation updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete quotation",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Quotation deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/lpos": {
+      "get": {
+        "summary": "Get all LPOs",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LPOs retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create LPO",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "po_number",
+                  "supplier_id",
+                  "item_name",
+                  "amount",
+                  "created_by"
+                ],
+                "properties": {
+                  "po_number": {
+                    "type": "string"
+                  },
+                  "supplier_id": {
+                    "type": "integer"
+                  },
+                  "item_name": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "currency": {
+                    "type": "string"
+                  },
+                  "created_by": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "LPO created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/lpos/{id}": {
+      "get": {
+        "summary": "Get LPO by ID",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LPO retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update LPO",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LPO updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete LPO",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LPO deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/petty-cash-books": {
+      "get": {
+        "summary": "Get all petty cash books",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Petty cash books retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create petty cash book",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id",
+                  "amount_received",
+                  "date",
+                  "balance"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  },
+                  "amount_received": {
+                    "type": "number"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "balance": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Petty cash book created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/petty-cash-books/{id}": {
+      "get": {
+        "summary": "Get petty cash book by ID",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Petty cash book retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update petty cash book",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Petty cash book updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete petty cash book",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Petty cash book deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/petty-cash-expenses": {
+      "get": {
+        "summary": "Get all petty cash expenses",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Petty cash expenses retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create petty cash expense",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "petty_cash_book_id",
+                  "date",
+                  "description",
+                  "amount",
+                  "created_by"
+                ],
+                "properties": {
+                  "petty_cash_book_id": {
+                    "type": "integer"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "created_by": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Petty cash expense created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/petty-cash-expenses/{id}": {
+      "get": {
+        "summary": "Get petty cash expense by ID",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Petty cash expense retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update petty cash expense",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Petty cash expense updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete petty cash expense",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Petty cash expense deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/travel-advance-requests": {
+      "get": {
+        "summary": "Get all travel advance requests",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Travel advance requests retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create travel advance request",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "user_id",
+                  "departure_date",
+                  "return_date",
+                  "total_cost",
+                  "flat_rate_id"
+                ],
+                "properties": {
+                  "user_id": {
+                    "type": "integer"
+                  },
+                  "departure_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "return_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "total_cost": {
+                    "type": "number"
+                  },
+                  "flat_rate_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Travel advance request created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/travel-advance-requests/{id}": {
+      "get": {
+        "summary": "Get travel advance request by ID",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Travel advance request retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update travel advance request",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Travel advance request updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete travel advance request",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Travel advance request deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/travel-advance-requests/{id}/approve": {
+      "put": {
+        "summary": "Approve travel advance request",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Travel advance request approved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/flat-rates": {
+      "get": {
+        "summary": "Get all flat rates",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Flat rates retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create flat rate",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "location_category",
+                  "amount"
+                ],
+                "properties": {
+                  "location_category": {
+                    "type": "string"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "currency": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Flat rate created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/replenishment-requests": {
+      "get": {
+        "summary": "Get all replenishment requests",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Replenishment requests retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create replenishment request",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "petty_cash_book_id",
+                  "date",
+                  "amount",
+                  "requested_by"
+                ],
+                "properties": {
+                  "petty_cash_book_id": {
+                    "type": "integer"
+                  },
+                  "date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "requested_by": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Replenishment request created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/replenishment-requests/{id}/approve": {
+      "put": {
+        "summary": "Approve replenishment request",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Replenishment request approved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/fiscal-years": {
+      "get": {
+        "summary": "Get all fiscal years",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fiscal years retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/fiscal-years/current": {
+      "get": {
+        "summary": "Get current fiscal year",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current fiscal year retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/quarters": {
+      "get": {
+        "summary": "Get all quarters",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Quarters retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/export": {
+      "get": {
+        "summary": "Export budgets",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budgets exported successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/expense-reports/export": {
+      "get": {
+        "summary": "Export expense reports",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Expense reports exported successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/suppliers/export": {
+      "get": {
+        "summary": "Export suppliers",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Suppliers exported successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/reports/budget": {
+      "get": {
+        "summary": "Get budget reports",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budget reports retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/reports/procurement": {
+      "get": {
+        "summary": "Get procurement reports",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Procurement reports retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/statistics": {
+      "get": {
+        "summary": "Get budget statistics",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budget statistics retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/suppliers/statistics": {
+      "get": {
+        "summary": "Get supplier statistics",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Supplier statistics retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/asset-maintenance": {
+      "get": {
+        "summary": "Get all asset maintenance records",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "scheduled",
+                "in_progress",
+                "completed",
+                "cancelled"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "preventive",
+                "corrective",
+                "emergency"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "asset_id",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asset maintenance records retrieved successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create asset maintenance record",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "asset_id",
+                  "maintenance_type",
+                  "title",
+                  "scheduled_date"
+                ],
+                "properties": {
+                  "asset_id": {
+                    "type": "integer"
+                  },
+                  "maintenance_type": {
+                    "type": "string",
+                    "enum": [
+                      "preventive",
+                      "corrective",
+                      "emergency"
+                    ]
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "scheduled_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "estimated_duration": {
+                    "type": "string"
+                  },
+                  "estimated_cost": {
+                    "type": "number"
+                  },
+                  "assigned_to": {
+                    "type": "string"
+                  },
+                  "vendor_id": {
+                    "type": "string"
+                  },
+                  "priority": {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high",
+                      "urgent"
+                    ]
+                  },
+                  "maintenance_category": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "scheduled",
+                      "in_progress",
+                      "completed",
+                      "cancelled"
+                    ]
+                  },
+                  "notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Asset maintenance record created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/asset-maintenance/{id}": {
+      "get": {
+        "summary": "Get asset maintenance record by ID",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asset maintenance record retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update asset maintenance record",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asset maintenance record updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete asset maintenance record",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asset maintenance record deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/asset-maintenance/{id}/complete": {
+      "put": {
+        "summary": "Complete asset maintenance",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "completed_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "actual_duration": {
+                    "type": "string"
+                  },
+                  "actual_cost": {
+                    "type": "number"
+                  },
+                  "completion_notes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Asset maintenance completed successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/asset-maintenance/export": {
+      "get": {
+        "summary": "Export asset maintenance data",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "xlsx",
+                "csv",
+                "pdf"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asset maintenance data exported successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/assets": {
+      "get": {
+        "summary": "Get all assets for maintenance assignment",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive",
+                "maintenance"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Assets retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/asset-maintenance/due": {
+      "get": {
+        "summary": "Get overdue maintenance",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days_overdue",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Overdue maintenance retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/asset-maintenance/calendar": {
+      "get": {
+        "summary": "Get calendar view data",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "month",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Calendar data retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/asset-maintenance/costs": {
+      "get": {
+        "summary": "Get maintenance cost analytics",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "period",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "monthly",
+                "quarterly",
+                "yearly"
+              ]
+            }
+          },
+          {
+            "in": "query",
+            "name": "year",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Maintenance cost analytics retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/assets/{id}/schedule-maintenance": {
+      "post": {
+        "summary": "Schedule maintenance for specific asset",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "maintenance_type",
+                  "scheduled_date"
+                ],
+                "properties": {
+                  "maintenance_type": {
+                    "type": "string",
+                    "enum": [
+                      "preventive",
+                      "corrective",
+                      "emergency"
+                    ]
+                  },
+                  "scheduled_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "estimated_duration": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Maintenance scheduled successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/assets/{id}/maintenance": {
+      "get": {
+        "summary": "Get maintenance history for asset",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Asset maintenance history retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/{id}/copy": {
+      "post": {
+        "summary": "Copy budget",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "new_budget_name": {
+                    "type": "string"
+                  },
+                  "new_budget_code": {
+                    "type": "string"
+                  },
+                  "fiscal_year": {
+                    "type": "string"
+                  },
+                  "adjust_percentage": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Budget copied successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/{id}/utilization": {
+      "get": {
+        "summary": "Get budget utilization",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "period",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "monthly",
+                "quarterly"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budget utilization retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/variance": {
+      "get": {
+        "summary": "Get budget variance analysis",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fiscal_year",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "department",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "variance_type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "over_budget",
+                "under_budget",
+                "on_budget"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budget variance analysis retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/analytics": {
+      "get": {
+        "summary": "Get budget analytics",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fiscal_year",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "department",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "analysis_type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "trends",
+                "performance",
+                "utilization"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budget analytics retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/summary": {
+      "get": {
+        "summary": "Get budget summary",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fiscal_year",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "department",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budget summary retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/trends": {
+      "get": {
+        "summary": "Get budget trends",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "fiscal_year",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "trend_period",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "monthly",
+                "quarterly"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budget trends retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/compare": {
+      "post": {
+        "summary": "Compare budgets",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "budget_ids"
+                ],
+                "properties": {
+                  "budget_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "comparison_type": {
+                    "type": "string",
+                    "enum": [
+                      "performance",
+                      "utilization",
+                      "variance"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Budget comparison retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/department/{departmentId}/summary": {
+      "get": {
+        "summary": "Get department budget summary",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "departmentId",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "fiscal_year",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Department budget summary retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/{id}/submit": {
+      "put": {
+        "summary": "Submit budget for approval",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "submission_notes": {
+                    "type": "string"
+                  },
+                  "approver_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Budget submitted for approval successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/{id}/reject": {
+      "put": {
+        "summary": "Reject budget",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "rejection_reason": {
+                    "type": "string"
+                  },
+                  "suggested_changes": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Budget rejected successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/finance/budgets/{id}/workflow": {
+      "get": {
+        "summary": "Get budget workflow",
+        "tags": [
+          "Finance"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Budget workflow retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/requisitions": {
+      "get": {
+        "summary": "Get all purchase requests with filtering and pagination",
+        "tags": [
+          "Requisitions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Page number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Items per page"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search term"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "pending",
+                "approved",
+                "rejected",
+                "cancelled"
+              ]
+            },
+            "description": "Filter by status"
+          },
+          {
+            "in": "query",
+            "name": "priority",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high",
+                "urgent"
+              ]
+            },
+            "description": "Filter by priority"
+          },
+          {
+            "in": "query",
+            "name": "department_id",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Filter by department"
+          },
+          {
+            "in": "query",
+            "name": "budget_id",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Filter by budget"
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Filter from date"
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Filter to date"
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "created_at",
+                "required_date",
+                "priority",
+                "status"
+              ]
+            },
+            "description": "Sort field"
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ]
+            },
+            "description": "Sort order"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase requests retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "requisitions": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PurchaseRequest"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/Pagination"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create purchase request",
+        "tags": [
+          "Requisitions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title",
+                  "department_id",
+                  "required_date",
+                  "estimated_cost",
+                  "items"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string",
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "department_id": {
+                    "type": "integer"
+                  },
+                  "priority": {
+                    "type": "string",
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high",
+                      "urgent"
+                    ]
+                  },
+                  "required_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "budget_id": {
+                    "type": "integer"
+                  },
+                  "estimated_cost": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "justification": {
+                    "type": "string"
+                  },
+                  "notes": {
+                    "type": "string"
+                  },
+                  "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "item_name",
+                        "quantity",
+                        "unit_price"
+                      ],
+                      "properties": {
+                        "item_name": {
+                          "type": "string",
+                          "maxLength": 255
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "quantity": {
+                          "type": "integer",
+                          "minimum": 1
+                        },
+                        "unit_price": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "specifications": {
+                          "type": "string"
+                        },
+                        "category": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "supplier_preference": {
+                          "type": "string",
+                          "maxLength": 255
+                        },
+                        "brand": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "model": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "unit_of_measure": {
+                          "type": "string",
+                          "maxLength": 50
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Purchase request created successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/requisitions/{id}": {
+      "get": {
+        "summary": "Get purchase request by ID",
+        "tags": [
+          "Requisitions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Purchase request ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase request retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PurchaseRequest"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Update purchase request",
+        "tags": [
+          "Requisitions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Purchase request ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRequisitionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Purchase request updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete purchase request",
+        "tags": [
+          "Requisitions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Purchase request ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Purchase request deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/requisitions/{id}/submit": {
+      "put": {
+        "summary": "Submit purchase request for approval",
+        "tags": [
+          "Requisitions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Purchase request ID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "comments": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Purchase request submitted for approval"
+          }
+        }
+      }
+    },
+    "/api/v1/requisitions/{id}/approve": {
+      "put": {
+        "summary": "Approve purchase request",
+        "tags": [
+          "Requisitions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Purchase request ID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "comments": {
+                    "type": "string"
+                  },
+                  "next_approver_id": {
+                    "type": "integer"
+                  },
+                  "conditions": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Purchase request approved"
+          }
+        }
+      }
+    },
+    "/api/v1/requisitions/{id}/reject": {
+      "put": {
+        "summary": "Reject purchase request",
+        "tags": [
+          "Requisitions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Purchase request ID"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  },
+                  "comments": {
+                    "type": "string"
+                  },
+                  "suggestions": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Purchase request rejected"
+          }
+        }
+      }
+    },
+    "/api/v1/requisitions/{id}/workflow": {
+      "get": {
+        "summary": "Get approval workflow for purchase request",
+        "tags": [
+          "Requisitions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Purchase request ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Approval workflow retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/requisitions/search": {
+      "get": {
+        "summary": "Search purchase requests",
+        "tags": [
+          "Requisitions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search term"
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "pending",
+                "approved",
+                "rejected",
+                "cancelled"
+              ]
+            },
+            "description": "Filter by status"
+          },
+          {
+            "in": "query",
+            "name": "priority",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high",
+                "urgent"
+              ]
+            },
+            "description": "Filter by priority"
+          },
+          {
+            "in": "query",
+            "name": "department_id",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Filter by department"
+          },
+          {
+            "in": "query",
+            "name": "budget_id",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Filter by budget"
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Filter from date"
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Filter to date"
+          },
+          {
+            "in": "query",
+            "name": "amount_min",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Minimum amount"
+          },
+          {
+            "in": "query",
+            "name": "amount_max",
+            "schema": {
+              "type": "number"
+            },
+            "description": "Maximum amount"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/requisitions/statistics": {
+      "get": {
+        "summary": "Get purchase request statistics",
+        "tags": [
+          "Requisitions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date_from",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Filter from date"
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Filter to date"
+          },
+          {
+            "in": "query",
+            "name": "department_id",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Filter by department"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistics retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/requisitions/bulk-approve": {
+      "post": {
+        "summary": "Bulk approve purchase requests",
+        "tags": [
+          "Requisitions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "request_ids"
+                ],
+                "properties": {
+                  "request_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "comments": {
+                    "type": "string"
+                  },
+                  "approver_id": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bulk approval completed"
+          }
+        }
+      }
+    },
+    "/api/v1/requisitions/bulk-delete": {
+      "post": {
+        "summary": "Bulk delete purchase requests",
+        "tags": [
+          "Requisitions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "request_ids"
+                ],
+                "properties": {
+                  "request_ids": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bulk deletion completed"
+          }
+        }
+      }
+    },
+    "/api/v1/users": {
+      "get": {
+        "summary": "Get all users with filtering and pagination",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 10
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "department_id",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive",
+                "suspended"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users retrieved successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/users/{id}": {
+      "get": {
+        "summary": "Get user by ID",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update user",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "department_id": {
+                    "type": "integer"
+                  },
+                  "role": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "active",
+                      "inactive",
+                      "suspended"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete user",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/users/{id}/activate": {
+      "put": {
+        "summary": "Activate user",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User activated successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/users/{id}/deactivate": {
+      "put": {
+        "summary": "Deactivate user",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deactivated successfully"
+          }
+        }
+      }
+    },
+    "/api/v1/users/profile": {
+      "get": {
+        "summary": "Get current user profile",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile retrieved successfully"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update current user profile",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully"
+          }
+        }
+      }
     }
   },
-  "tags": []
+  "tags": [
+    {
+      "name": "Finance",
+      "description": "Finance management operations"
+    },
+    {
+      "name": "Users",
+      "description": "User management operations"
+    }
+  ]
 }

@@ -1,0 +1,35 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "E:\\MSILU\\GHF\\GHF-backend\\logs\\.2f04d57ed580f6c9646a563050b75855316db600-audit.json",
+    "files": [
+        {
+            "date": 1751040014564,
+            "name": "E:\\MSILU\\GHF\\GHF-backend\\logs\\2025-06-27-app.log",
+            "hash": "83ca05dca1fc6b532fbaa02ace0589ccb015e15c31cd55c5efbe2d375fb743cf"
+        },
+        {
+            "date": 1751084900479,
+            "name": "E:\\MSILU\\GHF\\GHF-backend\\logs\\2025-06-28-app.log",
+            "hash": "2f6863ed4bfeaee013dbcca7e1bbc5b55b3335f5660c0cd82f484ed9a7776d45"
+        },
+        {
+            "date": 1751299662446,
+            "name": "E:\\MSILU\\GHF\\GHF-backend\\logs\\2025-06-30-app.log",
+            "hash": "312ab5ab13f15cd2f12fce87cd14b7db7c32adc43bb5905b9a45b7629db292ce"
+        },
+        {
+            "date": 1751386808497,
+            "name": "E:\\MSILU\\GHF\\GHF-backend\\logs\\2025-07-01-app.log",
+            "hash": "06a68bc3d46af13b260cce3381329e78a120cdacec2a8ef3f55ac5d75fb636ef"
+        },
+        {
+            "date": 1751437230724,
+            "name": "E:\\MSILU\\GHF\\GHF-backend\\logs\\2025-07-02-app.log",
+            "hash": "fa3b4e9f65b2109594e950cd1fa2ed57ef2fa1f487310cd231253715cbca9649"
+        }
+    ],
+    "hashType": "sha256"
+}

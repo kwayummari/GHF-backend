@@ -20,9 +20,9 @@ process.on('uncaughtException', (err) => {
   server.close(() => process.exit(1));
 });
 
-// Sync database models
+// Test database connection
 db.sequelize
-  .sync({ alter: config.NODE_ENV === 'development' })
+  .authenticate()
   .then(() => {
     logger.info('Database connected');
     
@@ -30,6 +30,7 @@ db.sequelize
     server.listen(config.PORT, () => {
       logger.info(`Server running in ${config.NODE_ENV} mode on port ${config.PORT}`);
       logger.info(`API Documentation available at http://localhost:${config.PORT}/api-docs`);
+      logger.info('Run "npm run migrate" to set up database tables');
     });
   })
   .catch((err) => {

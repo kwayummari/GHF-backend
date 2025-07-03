@@ -5,12 +5,32 @@ const logger = require('../utils/logger');
 
 // Import models
 const User = require('./User');
-// Import other models here
+const Asset = require('./Asset');
+const AssetMaintenance = require('./AssetMaintenance');
+const Permission = require('./Permission');
+const PurchaseRequest = require('./PurchaseRequest');
+const RequisitionItem = require('./RequisitionItem');
+const RequisitionAttachment = require('./RequisitionAttachment');
+const RequisitionWorkflow = require('./RequisitionWorkflow');
+const Department = require('./Department');
+const BasicEmployeeData = require('./BasicEmployeeData');
+const SalaryComponent = require('./SalaryComponent');
+const Payroll = require('./Payroll');
 
 // Initialize models
 const models = {
   User,
-  // Add other models here
+  Asset,
+  AssetMaintenance,
+  Permission,
+  PurchaseRequest,
+  RequisitionItem,
+  RequisitionAttachment,
+  RequisitionWorkflow,
+  Department,
+  BasicEmployeeData,
+  SalaryComponent,
+  Payroll,
 };
 
 // Associate models

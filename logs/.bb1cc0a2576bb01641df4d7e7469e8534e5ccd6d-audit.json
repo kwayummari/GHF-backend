@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "E:\\MSILU\\GHF\\GHF-backend\\logs\\.bb1cc0a2576bb01641df4d7e7469e8534e5ccd6d-audit.json",
+    "files": [
+        {
+            "date": 1751437226857,
+            "name": "E:\\MSILU\\GHF\\GHF-backend\\logs\\2025-07-02-app.log",
+            "hash": "cb6cb1e356c2e44596243daeacb539906d10a7749b4148074225338f40444870"
+        }
+    ],
+    "hashType": "sha256"
+}

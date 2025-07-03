@@ -1,7 +1,7 @@
 const express = require('express');
 const authController = require('../controllers/authController');
 const { authenticate } = require('../middlewares/authMiddleware');
-const validateRequest = require('../middlewares/validateRequest');
+const { validateRequest } = require('../middlewares/validateRequest');
 const { loginValidator, forgotPasswordValidator, resetPasswordValidator } = require('../validators/loginValidator');
 const { registerValidator } = require('../validators/userValidator');
 
