@@ -1,6 +1,6 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.bulkInsert('departments', [
+    await queryInterface.bulkInsert('Departments', [
       {
         department_name: 'Administration',
         description: 'Responsible for administrative functions and operations',
