@@ -7,61 +7,97 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      user_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'users',
-          key: 'id'
-        }
-      },
       name: {
         type: Sequelize.STRING(255),
         allowNull: false
       },
       type: {
-        type: Sequelize.ENUM('allowance', 'deduction'),
+        type: Sequelize.ENUM('basic', 'allowance', 'deduction', 'bonus'),
         allowNull: false
+      },
+      isFixed: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
       },
       amount: {
-        type: Sequelize.DECIMAL(15, 2),
-        allowNull: false
+        type: Sequelize.DECIMAL(10,2),
+        allowNull: true
       },
-      percentage: {
-        type: Sequelize.DECIMAL(5, 2),
-        allowNull: true,
-        comment: 'Percentage of basic salary (if applicable)'
-      },
-      is_percentage: {
-        type: Sequelize.BOOLEAN,
-        defaultValue: false
+      calculationMethod: {
+        type: Sequelize.STRING(50),
+        allowNull: true
       },
       description: {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      effective_date: {
-        type: Sequelize.DATEONLY,
-        allowNull: false,
-        defaultValue: Sequelize.NOW
-      },
-      end_date: {
-        type: Sequelize.DATEONLY,
-        allowNull: true
-      },
-      is_active: {
+      isActive: {
         type: Sequelize.BOOLEAN,
+        allowNull: false,
         defaultValue: true
       },
-      created_at: {
+      createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       },
-      updated_at: {
+      updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
       }
     });
+
+    // Add initial salary components
+    await queryInterface.bulkInsert('salary_components', [
+      { 
+        name: 'Basic Salary', 
+        type: 'basic',
+        isFixed: true,
+        description: 'Base salary component',
+        isActive: true
+      },
+      { 
+        name: 'Transport Allowance', 
+        type: 'allowance',
+        isFixed: true,
+        description: 'Monthly transport allowance',
+        isActive: true
+      },
+      { 
+        name: 'Medical Allowance', 
+        type: 'allowance',
+        isFixed: true,
+        description: 'Monthly medical allowance',
+        isActive: true
+      },
+      { 
+        name: 'Tax', 
+        type: 'deduction',
+        isFixed: false,
+        calculationMethod: 'percentage',
+        description: 'Income tax deduction',
+        isActive: true
+      },
+      { 
+        name: 'Social Security', 
+        type: 'deduction',
+        isFixed: false,
+        calculationMethod: 'percentage',
+        description: 'Social security contribution',
+        isActive: true
+      },
+      { 
+        name: 'Performance Bonus', 
+        type: 'bonus',
+        isFixed: false,
+        calculationMethod: 'percentage',
+        description: 'Performance-based bonus',
+        isActive: true
+      }
+    ], {});
   },
 
   down: async (queryInterface, Sequelize) => {

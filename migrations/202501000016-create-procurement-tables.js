@@ -1,6 +1,6 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    // Create Suppliers table
+    // Create suppliers table
     await queryInterface.createTable('suppliers', {
       id: {
         allowNull: false,
@@ -8,86 +8,56 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      supplier_code: {
-        type: Sequelize.STRING(50),
-        allowNull: false,
-        unique: true
-      },
-      company_name: {
+      name: {
         type: Sequelize.STRING(255),
         allowNull: false
       },
-      contact_person: {
-        type: Sequelize.STRING(100),
-        allowNull: true
-      },
-      email: {
-        type: Sequelize.STRING(100),
-        allowNull: true
-      },
-      phone: {
-        type: Sequelize.STRING(20),
-        allowNull: true
-      },
       address: {
         type: Sequelize.TEXT,
-        allowNull: true
-      },
-      category: {
-        type: Sequelize.STRING(100),
         allowNull: false
       },
+      contactPerson: {
+        type: Sequelize.STRING(255),
+        allowNull: false
+      },
+      phoneNumber: {
+        type: Sequelize.STRING(20),
+        allowNull: false
+      },
+      email: {
+        type: Sequelize.STRING(255),
+        allowNull: true
+      },
       status: {
-        type: Sequelize.ENUM('active', 'inactive', 'blacklisted'),
+        type: Sequelize.ENUM('active', 'inactive'),
         allowNull: false,
         defaultValue: 'active'
       },
-      created_by: {
-        type: Sequelize.INTEGER,
+      createdAt: {
         allowNull: false,
-        references: {
-          model: 'users',
-          key: 'id'
-        }
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       },
-      updated_by: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'users',
-          key: 'id'
-        }
-      },
-      created_at: {
+      updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
-      },
-      updated_at: {
-        allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
       }
     });
 
-    // Create Purchase Orders table
-    await queryInterface.createTable('purchase_orders', {
+    // Create purchase_requests table
+    await queryInterface.createTable('purchase_requests', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      po_number: {
+      requestNumber: {
         type: Sequelize.STRING(50),
         allowNull: false,
         unique: true
-      },
-      supplier_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'suppliers',
-          key: 'id'
-        }
       },
       department_id: {
         type: Sequelize.INTEGER,
@@ -95,123 +65,106 @@ module.exports = {
         references: {
           model: 'departments',
           key: 'id'
-        }
+        },
+        onUpdate: 'cascade',
+        onDelete: 'cascade'
       },
-      po_date: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
-      delivery_date: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
-      status: {
-        type: Sequelize.ENUM('draft', 'approved', 'issued', 'partially_received', 'fully_received', 'cancelled'),
-        allowNull: false,
-        defaultValue: 'draft'
-      },
-      total_amount: {
-        type: Sequelize.DECIMAL(15, 2),
-        allowNull: false
-      },
-      created_by: {
+      requestedBy: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
           model: 'users',
           key: 'id'
-        }
-      },
-      approved_by: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'users',
-          key: 'id'
-        }
-      },
-      created_at: {
-        allowNull: false,
-        type: Sequelize.DATE
-      },
-      updated_at: {
-        allowNull: false,
-        type: Sequelize.DATE
-      }
-    });
-
-    // Create Purchase Order Items table
-    await queryInterface.createTable('po_items', {
-      id: {
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
-        type: Sequelize.INTEGER
-      },
-      po_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'purchase_orders',
-          key: 'id'
-        }
-      },
-      item_code: {
-        type: Sequelize.STRING(50),
-        allowNull: false
-      },
-      item_description: {
-        type: Sequelize.TEXT,
-        allowNull: false
-      },
-      quantity: {
-        type: Sequelize.DECIMAL(10, 2),
-        allowNull: false
-      },
-      unit_price: {
-        type: Sequelize.DECIMAL(15, 2),
-        allowNull: false
-      },
-      total_price: {
-        type: Sequelize.DECIMAL(15, 2),
-        allowNull: false
-      },
-      unit_of_measure: {
-        type: Sequelize.STRING(50),
-        allowNull: false
+        },
+        onUpdate: 'cascade',
+        onDelete: 'cascade'
       },
       status: {
-        type: Sequelize.ENUM('pending', 'received', 'cancelled'),
+        type: Sequelize.ENUM('pending', 'approved', 'rejected', 'completed'),
         allowNull: false,
         defaultValue: 'pending'
       },
-      received_quantity: {
-        type: Sequelize.DECIMAL(10, 2),
-        allowNull: true,
-        defaultValue: 0
+      totalAmount: {
+        type: Sequelize.DECIMAL(10,2),
+        allowNull: false
       },
-      created_at: {
+      createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       },
-      updated_at: {
+      updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
       }
     });
 
-    // Create Quotations table
-    await queryInterface.createTable('quotations', {
+    // Create purchase_request_items table
+    await queryInterface.createTable('purchase_request_items', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      quotation_number: {
-        type: Sequelize.STRING(50),
+      purchase_request_id: {
+        type: Sequelize.INTEGER,
         allowNull: false,
-        unique: true
+        references: {
+          model: 'purchase_requests',
+          key: 'id'
+        },
+        onUpdate: 'cascade',
+        onDelete: 'cascade'
+      },
+      itemName: {
+        type: Sequelize.STRING(255),
+        allowNull: false
+      },
+      quantity: {
+        type: Sequelize.INTEGER,
+        allowNull: false
+      },
+      unitPrice: {
+        type: Sequelize.DECIMAL(10,2),
+        allowNull: false
+      },
+      description: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      createdAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
+      }
+    });
+
+    // Create purchase_orders table
+    await queryInterface.createTable('purchase_orders', {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: Sequelize.INTEGER
+      },
+      purchase_request_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'purchase_requests',
+          key: 'id'
+        },
+        onUpdate: 'cascade',
+        onDelete: 'cascade'
       },
       supplier_id: {
         type: Sequelize.INTEGER,
@@ -219,107 +172,195 @@ module.exports = {
         references: {
           model: 'suppliers',
           key: 'id'
-        }
+        },
+        onUpdate: 'cascade',
+        onDelete: 'cascade'
       },
-      quotation_date: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
-      validity_date: {
-        type: Sequelize.DATE,
-        allowNull: false
+      orderNumber: {
+        type: Sequelize.STRING(50),
+        allowNull: false,
+        unique: true
       },
       status: {
-        type: Sequelize.ENUM('pending', 'approved', 'rejected', 'converted_to_po'),
+        type: Sequelize.ENUM('pending', 'approved', 'rejected', 'completed'),
         allowNull: false,
         defaultValue: 'pending'
       },
-      total_amount: {
-        type: Sequelize.DECIMAL(15, 2),
+      totalAmount: {
+        type: Sequelize.DECIMAL(10,2),
         allowNull: false
       },
-      created_by: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'users',
-          key: 'id'
-        }
+      deliveryDate: {
+        type: Sequelize.DATE,
+        allowNull: false
       },
-      approved_by: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'users',
-          key: 'id'
-        }
-      },
-      created_at: {
+      createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       },
-      updated_at: {
+      updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
       }
     });
 
-    // Create Quotation Items table
-    await queryInterface.createTable('quotation_items', {
+    // Create purchase_order_items table
+    await queryInterface.createTable('purchase_order_items', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      quotation_id: {
+      purchase_order_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'quotations',
+          model: 'purchase_orders',
           key: 'id'
-        }
+        },
+        onUpdate: 'cascade',
+        onDelete: 'cascade'
       },
-      item_code: {
-        type: Sequelize.STRING(50),
-        allowNull: false
-      },
-      item_description: {
-        type: Sequelize.TEXT,
-        allowNull: false
+      purchase_request_item_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'purchase_request_items',
+          key: 'id'
+        },
+        onUpdate: 'cascade',
+        onDelete: 'cascade'
       },
       quantity: {
-        type: Sequelize.DECIMAL(10, 2),
+        type: Sequelize.INTEGER,
         allowNull: false
       },
-      unit_price: {
-        type: Sequelize.DECIMAL(15, 2),
+      unitPrice: {
+        type: Sequelize.DECIMAL(10,2),
         allowNull: false
       },
-      total_price: {
-        type: Sequelize.DECIMAL(15, 2),
-        allowNull: false
+      description: {
+        type: Sequelize.TEXT,
+        allowNull: true
       },
-      unit_of_measure: {
-        type: Sequelize.STRING(50),
-        allowNull: false
-      },
-      created_at: {
+      createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       },
-      updated_at: {
+      updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
       }
+    });
+
+    // Add foreign key constraints
+    await queryInterface.addConstraint('purchase_requests', {
+      fields: ['department_id'],
+      type: 'foreign key',
+      name: 'fk_purchase_requests_department',
+      references: {
+        table: 'departments',
+        field: 'id'
+      },
+      onDelete: 'cascade',
+      onUpdate: 'cascade'
+    });
+
+    await queryInterface.addConstraint('purchase_requests', {
+      fields: ['requestedBy'],
+      type: 'foreign key',
+      name: 'fk_purchase_requests_user',
+      references: {
+        table: 'users',
+        field: 'id'
+      },
+      onDelete: 'cascade',
+      onUpdate: 'cascade'
+    });
+
+    await queryInterface.addConstraint('purchase_request_items', {
+      fields: ['purchase_request_id'],
+      type: 'foreign key',
+      name: 'fk_purchase_request_items_request',
+      references: {
+        table: 'purchase_requests',
+        field: 'id'
+      },
+      onDelete: 'cascade',
+      onUpdate: 'cascade'
+    });
+
+    await queryInterface.addConstraint('purchase_orders', {
+      fields: ['purchase_request_id'],
+      type: 'foreign key',
+      name: 'fk_purchase_orders_request',
+      references: {
+        table: 'purchase_requests',
+        field: 'id'
+      },
+      onDelete: 'cascade',
+      onUpdate: 'cascade'
+    });
+
+    await queryInterface.addConstraint('purchase_orders', {
+      fields: ['supplier_id'],
+      type: 'foreign key',
+      name: 'fk_purchase_orders_supplier',
+      references: {
+        table: 'suppliers',
+        field: 'id'
+      },
+      onDelete: 'cascade',
+      onUpdate: 'cascade'
+    });
+
+    await queryInterface.addConstraint('purchase_order_items', {
+      fields: ['purchase_order_id'],
+      type: 'foreign key',
+      name: 'fk_purchase_order_items_order',
+      references: {
+        table: 'purchase_orders',
+        field: 'id'
+      },
+      onDelete: 'cascade',
+      onUpdate: 'cascade'
+    });
+
+    await queryInterface.addConstraint('purchase_order_items', {
+      fields: ['purchase_request_item_id'],
+      type: 'foreign key',
+      name: 'fk_purchase_order_items_request_item',
+      references: {
+        table: 'purchase_request_items',
+        field: 'id'
+      },
+      onDelete: 'cascade',
+      onUpdate: 'cascade'
     });
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('quotation_items');
-    await queryInterface.dropTable('quotations');
-    await queryInterface.dropTable('po_items');
+    // Remove foreign key constraints
+    await queryInterface.removeConstraint('purchase_requests', 'fk_purchase_requests_department');
+    await queryInterface.removeConstraint('purchase_requests', 'fk_purchase_requests_user');
+    await queryInterface.removeConstraint('purchase_request_items', 'fk_purchase_request_items_request');
+    await queryInterface.removeConstraint('purchase_orders', 'fk_purchase_orders_request');
+    await queryInterface.removeConstraint('purchase_orders', 'fk_purchase_orders_supplier');
+    await queryInterface.removeConstraint('purchase_order_items', 'fk_purchase_order_items_order');
+    await queryInterface.removeConstraint('purchase_order_items', 'fk_purchase_order_items_request_item');
+
+    // Drop tables in reverse order
+    await queryInterface.dropTable('purchase_order_items');
     await queryInterface.dropTable('purchase_orders');
+    await queryInterface.dropTable('purchase_request_items');
+    await queryInterface.dropTable('purchase_requests');
     await queryInterface.dropTable('suppliers');
   }
 };

@@ -1,172 +1,211 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    // Create Petty Cash Book table
-    await queryInterface.createTable('petty_cash_book', {
+    // Create petty_cash_funds table
+    await queryInterface.createTable('petty_cash_funds', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      transaction_number: {
-        type: Sequelize.STRING(50),
+      name: {
+        type: Sequelize.STRING(255),
+        allowNull: false
+      },
+      description: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      initialAmount: {
+        type: Sequelize.DECIMAL(10,2),
+        allowNull: false
+      },
+      currentBalance: {
+        type: Sequelize.DECIMAL(10,2),
+        allowNull: false
+      },
+      status: {
+        type: Sequelize.ENUM('active', 'inactive'),
         allowNull: false,
-        unique: true
+        defaultValue: 'active'
       },
-      transaction_date: {
+      createdAt: {
+        allowNull: false,
         type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
+      }
+    });
+
+    // Create petty_cash_transactions table
+    await queryInterface.createTable('petty_cash_transactions', {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: Sequelize.INTEGER
+      },
+      petty_cash_fund_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'petty_cash_funds',
+          key: 'id'
+        },
+        onUpdate: 'cascade',
+        onDelete: 'cascade'
+      },
+      transactionType: {
+        type: Sequelize.ENUM('expense', 'reimbursement', 'refund'),
         allowNull: false
       },
-      transaction_type: {
-        type: Sequelize.ENUM('income', 'expense'),
-        allowNull: false
-      },
-      category: {
-        type: Sequelize.STRING(100),
+      amount: {
+        type: Sequelize.DECIMAL(10,2),
         allowNull: false
       },
       description: {
         type: Sequelize.TEXT,
         allowNull: false
       },
-      amount: {
-        type: Sequelize.DECIMAL(15, 2),
-        allowNull: false
+      category: {
+        type: Sequelize.STRING(100),
+        allowNull: true
       },
-      payment_method: {
-        type: Sequelize.ENUM('cash', 'cheque', 'bank_transfer'),
-        allowNull: false
-      },
-      reference_number: {
+      receiptNumber: {
         type: Sequelize.STRING(50),
         allowNull: true
       },
       status: {
-        type: Sequelize.ENUM('pending', 'approved', 'rejected', 'cancelled'),
+        type: Sequelize.ENUM('pending', 'approved', 'rejected', 'completed'),
         allowNull: false,
         defaultValue: 'pending'
       },
-      created_by: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'users',
-          key: 'id'
-        }
-      },
-      approved_by: {
+      approvedBy: {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: {
           model: 'users',
           key: 'id'
-        }
+        },
+        onUpdate: 'cascade',
+        onDelete: 'set null'
       },
-      created_at: {
+      createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       },
-      updated_at: {
+      updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
       }
     });
 
-    // Create Petty Cash Balance table
-    await queryInterface.createTable('petty_cash_balance', {
+    // Create petty_cash_transaction_details table
+    await queryInterface.createTable('petty_cash_transaction_details', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      date: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
-      opening_balance: {
-        type: Sequelize.DECIMAL(15, 2),
-        allowNull: false
-      },
-      closing_balance: {
-        type: Sequelize.DECIMAL(15, 2),
-        allowNull: false
-      },
-      created_by: {
+      transaction_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'users',
+          model: 'petty_cash_transactions',
           key: 'id'
-        }
+        },
+        onUpdate: 'cascade',
+        onDelete: 'cascade'
       },
-      created_at: {
-        allowNull: false,
-        type: Sequelize.DATE
+      itemName: {
+        type: Sequelize.STRING(255),
+        allowNull: false
       },
-      updated_at: {
+      quantity: {
+        type: Sequelize.INTEGER,
+        allowNull: false
+      },
+      unitPrice: {
+        type: Sequelize.DECIMAL(10,2),
+        allowNull: false
+      },
+      totalAmount: {
+        type: Sequelize.DECIMAL(10,2),
+        allowNull: false
+      },
+      description: {
+        type: Sequelize.TEXT,
+        allowNull: true
+      },
+      createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
       }
     });
 
-    // Create Petty Cash Reports table
-    await queryInterface.createTable('petty_cash_reports', {
-      id: {
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
-        type: Sequelize.INTEGER
+    // Add foreign key constraints
+    await queryInterface.addConstraint('petty_cash_transactions', {
+      fields: ['petty_cash_fund_id'],
+      type: 'foreign key',
+      name: 'fk_petty_cash_transactions_fund',
+      references: {
+        table: 'petty_cash_funds',
+        field: 'id'
       },
-      report_type: {
-        type: Sequelize.STRING(50),
-        allowNull: false
+      onDelete: 'cascade',
+      onUpdate: 'cascade'
+    });
+
+    await queryInterface.addConstraint('petty_cash_transactions', {
+      fields: ['approvedBy'],
+      type: 'foreign key',
+      name: 'fk_petty_cash_transactions_user',
+      references: {
+        table: 'users',
+        field: 'id'
       },
-      start_date: {
-        type: Sequelize.DATE,
-        allowNull: false
+      onDelete: 'set null',
+      onUpdate: 'cascade'
+    });
+
+    await queryInterface.addConstraint('petty_cash_transaction_details', {
+      fields: ['transaction_id'],
+      type: 'foreign key',
+      name: 'fk_petty_cash_transaction_details_transaction',
+      references: {
+        table: 'petty_cash_transactions',
+        field: 'id'
       },
-      end_date: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
-      total_income: {
-        type: Sequelize.DECIMAL(15, 2),
-        allowNull: false,
-        defaultValue: 0
-      },
-      total_expense: {
-        type: Sequelize.DECIMAL(15, 2),
-        allowNull: false,
-        defaultValue: 0
-      },
-      balance: {
-        type: Sequelize.DECIMAL(15, 2),
-        allowNull: false,
-        defaultValue: 0
-      },
-      created_by: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'users',
-          key: 'id'
-        }
-      },
-      created_at: {
-        allowNull: false,
-        type: Sequelize.DATE
-      },
-      updated_at: {
-        allowNull: false,
-        type: Sequelize.DATE
-      }
+      onDelete: 'cascade',
+      onUpdate: 'cascade'
     });
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.dropTable('petty_cash_reports');
-    await queryInterface.dropTable('petty_cash_balance');
-    await queryInterface.dropTable('petty_cash_book');
+    // Remove foreign key constraints
+    await queryInterface.removeConstraint('petty_cash_transactions', 'fk_petty_cash_transactions_fund');
+    await queryInterface.removeConstraint('petty_cash_transactions', 'fk_petty_cash_transactions_user');
+    await queryInterface.removeConstraint('petty_cash_transaction_details', 'fk_petty_cash_transaction_details_transaction');
+
+    // Drop tables in reverse order
+    await queryInterface.dropTable('petty_cash_transaction_details');
+    await queryInterface.dropTable('petty_cash_transactions');
+    await queryInterface.dropTable('petty_cash_funds');
   }
 };

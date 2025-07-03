@@ -8,7 +8,7 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       name: {
-        type: Sequelize.STRING(50),
+        type: Sequelize.STRING(255),
         allowNull: false,
         unique: true
       },
@@ -16,20 +16,27 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      status: {
-        type: Sequelize.ENUM('active', 'inactive'),
+      createdAt: {
         allowNull: false,
-        defaultValue: 'active'
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       },
-      created_at: {
+      updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
-      },
-      updated_at: {
-        allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
       }
     });
+
+    // Add initial roles
+    await queryInterface.bulkInsert('roles', [
+      { name: 'admin', description: 'Full system access' },
+      { name: 'manager', description: 'Department management' },
+      { name: 'employee', description: 'Basic user access' },
+      { name: 'hr', description: 'Human Resources access' },
+      { name: 'finance', description: 'Finance department access' }
+    ], {});
   },
 
   down: async (queryInterface, Sequelize) => {

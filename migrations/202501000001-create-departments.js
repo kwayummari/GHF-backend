@@ -7,7 +7,7 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      department_name: {
+      name: {
         type: Sequelize.STRING(255),
         allowNull: false
       },
@@ -15,22 +15,16 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      manager_id: {
-        type: Sequelize.INTEGER,
-        allowNull: true
-      },
-      status: {
-        type: Sequelize.ENUM('active', 'inactive'),
+      createdAt: {
         allowNull: false,
-        defaultValue: 'active'
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       },
-      created_at: {
+      updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
-      },
-      updated_at: {
-        allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
       }
     });
   },

@@ -1,14 +1,13 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    // Create budget_categories table
-    await queryInterface.createTable('budget_categories', {
+    await queryInterface.createTable('appraisal_forms', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      name: {
+      title: {
         type: Sequelize.STRING(255),
         allowNull: false
       },
@@ -16,55 +15,18 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      parent_id: {
+      department_id: {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: {
-          model: 'budget_categories',
+          model: 'departments',
           key: 'id'
         },
         onUpdate: 'cascade',
         onDelete: 'set null'
       },
-      createdAt: {
-        allowNull: false,
-        type: Sequelize.DATE,
-        defaultValue: Sequelize.NOW
-      },
-      updatedAt: {
-        allowNull: false,
-        type: Sequelize.DATE,
-        defaultValue: Sequelize.NOW,
-        onUpdate: Sequelize.NOW
-      }
-    });
-
-    // Create budgets table
-    await queryInterface.createTable('budgets', {
-      id: {
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
-        type: Sequelize.INTEGER
-      },
-      name: {
-        type: Sequelize.STRING(255),
-        allowNull: false
-      },
-      description: {
-        type: Sequelize.TEXT,
-        allowNull: true
-      },
-      startDate: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
-      endDate: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
       status: {
-        type: Sequelize.ENUM('draft', 'approved', 'rejected', 'active', 'closed'),
+        type: Sequelize.ENUM('draft', 'active', 'archived'),
         allowNull: false,
         defaultValue: 'draft'
       },
@@ -81,39 +43,108 @@ module.exports = {
       }
     });
 
-    // Create budget_allocations table
-    await queryInterface.createTable('budget_allocations', {
+    await queryInterface.createTable('appraisal_questions', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      budget_id: {
+      form_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'budgets',
+          model: 'appraisal_forms',
           key: 'id'
         },
         onUpdate: 'cascade',
         onDelete: 'cascade'
       },
-      category_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'budget_categories',
-          key: 'id'
-        },
-        onUpdate: 'cascade',
-        onDelete: 'cascade'
-      },
-      amount: {
-        type: Sequelize.DECIMAL(10,2),
+      question: {
+        type: Sequelize.TEXT,
         allowNull: false
       },
-      notes: {
+      weight: {
+        type: Sequelize.DECIMAL(5,2),
+        allowNull: false
+      },
+      question_type: {
+        type: Sequelize.ENUM('rating', 'text', 'multiple_choice'),
+        allowNull: false
+      },
+      options: {
+        type: Sequelize.JSON,
+        allowNull: true
+      },
+      order: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0
+      },
+      createdAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
+      }
+    });
+
+    await queryInterface.createTable('appraisal_reviews', {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: Sequelize.INTEGER
+      },
+      form_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'appraisal_forms',
+          key: 'id'
+        },
+        onUpdate: 'cascade',
+        onDelete: 'cascade'
+      },
+      employee_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'users',
+          key: 'id'
+        },
+        onUpdate: 'cascade',
+        onDelete: 'cascade'
+      },
+      reviewer_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'users',
+          key: 'id'
+        },
+        onUpdate: 'cascade',
+        onDelete: 'cascade'
+      },
+      review_date: {
+        type: Sequelize.DATE,
+        allowNull: false
+      },
+      status: {
+        type: Sequelize.ENUM('pending', 'completed', 'approved', 'rejected'),
+        allowNull: false,
+        defaultValue: 'pending'
+      },
+      overall_rating: {
+        type: Sequelize.DECIMAL(3,1),
+        allowNull: true
+      },
+      comments: {
         type: Sequelize.TEXT,
         allowNull: true
       },
@@ -130,68 +161,40 @@ module.exports = {
       }
     });
 
-    // Create budget_transactions table
-    await queryInterface.createTable('budget_transactions', {
+    await queryInterface.createTable('appraisal_answers', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      budget_id: {
+      review_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'budgets',
+          model: 'appraisal_reviews',
           key: 'id'
         },
         onUpdate: 'cascade',
         onDelete: 'cascade'
       },
-      category_id: {
+      question_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'budget_categories',
+          model: 'appraisal_questions',
           key: 'id'
         },
         onUpdate: 'cascade',
         onDelete: 'cascade'
       },
-      transaction_date: {
-        type: Sequelize.DATE,
-        allowNull: false
-      },
-      amount: {
-        type: Sequelize.DECIMAL(10,2),
-        allowNull: false
-      },
-      transaction_type: {
-        type: Sequelize.ENUM('expense', 'revenue'),
-        allowNull: false
-      },
-      description: {
+      answer: {
         type: Sequelize.TEXT,
         allowNull: false
       },
-      document_number: {
-        type: Sequelize.STRING(50),
+      rating: {
+        type: Sequelize.DECIMAL(3,1),
         allowNull: true
-      },
-      status: {
-        type: Sequelize.ENUM('pending', 'approved', 'rejected', 'completed'),
-        allowNull: false,
-        defaultValue: 'pending'
-      },
-      approved_by: {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        references: {
-          model: 'users',
-          key: 'id'
-        },
-        onUpdate: 'cascade',
-        onDelete: 'set null'
       },
       createdAt: {
         allowNull: false,
@@ -207,92 +210,105 @@ module.exports = {
     });
 
     // Add foreign key constraints
-    await queryInterface.addConstraint('budget_categories', {
-      fields: ['parent_id'],
+    await queryInterface.addConstraint('appraisal_forms', {
+      fields: ['department_id'],
       type: 'foreign key',
-      name: 'fk_budget_categories_parent',
+      name: 'fk_appraisal_forms_department',
       references: {
-        table: 'budget_categories',
+        table: 'departments',
         field: 'id'
       },
       onDelete: 'set null',
       onUpdate: 'cascade'
     });
 
-    await queryInterface.addConstraint('budget_allocations', {
-      fields: ['budget_id'],
+    await queryInterface.addConstraint('appraisal_questions', {
+      fields: ['form_id'],
       type: 'foreign key',
-      name: 'fk_budget_allocations_budget',
+      name: 'fk_appraisal_questions_form',
       references: {
-        table: 'budgets',
+        table: 'appraisal_forms',
         field: 'id'
       },
       onDelete: 'cascade',
       onUpdate: 'cascade'
     });
 
-    await queryInterface.addConstraint('budget_allocations', {
-      fields: ['category_id'],
+    await queryInterface.addConstraint('appraisal_reviews', {
+      fields: ['form_id'],
       type: 'foreign key',
-      name: 'fk_budget_allocations_category',
+      name: 'fk_appraisal_reviews_form',
       references: {
-        table: 'budget_categories',
+        table: 'appraisal_forms',
         field: 'id'
       },
       onDelete: 'cascade',
       onUpdate: 'cascade'
     });
 
-    await queryInterface.addConstraint('budget_transactions', {
-      fields: ['budget_id'],
+    await queryInterface.addConstraint('appraisal_reviews', {
+      fields: ['employee_id'],
       type: 'foreign key',
-      name: 'fk_budget_transactions_budget',
-      references: {
-        table: 'budgets',
-        field: 'id'
-      },
-      onDelete: 'cascade',
-      onUpdate: 'cascade'
-    });
-
-    await queryInterface.addConstraint('budget_transactions', {
-      fields: ['category_id'],
-      type: 'foreign key',
-      name: 'fk_budget_transactions_category',
-      references: {
-        table: 'budget_categories',
-        field: 'id'
-      },
-      onDelete: 'cascade',
-      onUpdate: 'cascade'
-    });
-
-    await queryInterface.addConstraint('budget_transactions', {
-      fields: ['approved_by'],
-      type: 'foreign key',
-      name: 'fk_budget_transactions_user',
+      name: 'fk_appraisal_reviews_employee',
       references: {
         table: 'users',
         field: 'id'
       },
-      onDelete: 'set null',
+      onDelete: 'cascade',
+      onUpdate: 'cascade'
+    });
+
+    await queryInterface.addConstraint('appraisal_reviews', {
+      fields: ['reviewer_id'],
+      type: 'foreign key',
+      name: 'fk_appraisal_reviews_reviewer',
+      references: {
+        table: 'users',
+        field: 'id'
+      },
+      onDelete: 'cascade',
+      onUpdate: 'cascade'
+    });
+
+    await queryInterface.addConstraint('appraisal_answers', {
+      fields: ['review_id'],
+      type: 'foreign key',
+      name: 'fk_appraisal_answers_review',
+      references: {
+        table: 'appraisal_reviews',
+        field: 'id'
+      },
+      onDelete: 'cascade',
+      onUpdate: 'cascade'
+    });
+
+    await queryInterface.addConstraint('appraisal_answers', {
+      fields: ['question_id'],
+      type: 'foreign key',
+      name: 'fk_appraisal_answers_question',
+      references: {
+        table: 'appraisal_questions',
+        field: 'id'
+      },
+      onDelete: 'cascade',
       onUpdate: 'cascade'
     });
   },
 
   down: async (queryInterface, Sequelize) => {
     // Remove foreign key constraints
-    await queryInterface.removeConstraint('budget_categories', 'fk_budget_categories_parent');
-    await queryInterface.removeConstraint('budget_allocations', 'fk_budget_allocations_budget');
-    await queryInterface.removeConstraint('budget_allocations', 'fk_budget_allocations_category');
-    await queryInterface.removeConstraint('budget_transactions', 'fk_budget_transactions_budget');
-    await queryInterface.removeConstraint('budget_transactions', 'fk_budget_transactions_category');
-    await queryInterface.removeConstraint('budget_transactions', 'fk_budget_transactions_user');
+    await queryInterface.removeConstraint('appraisal_forms', 'fk_appraisal_forms_department');
+    await queryInterface.removeConstraint('appraisal_questions', 'fk_appraisal_questions_form');
+    await queryInterface.removeConstraint('appraisal_reviews', 'fk_appraisal_reviews_form');
+    await queryInterface.removeConstraint('appraisal_reviews', 'fk_appraisal_reviews_employee');
+    await queryInterface.removeConstraint('appraisal_reviews', 'fk_appraisal_reviews_reviewer');
+    await queryInterface.removeConstraint('appraisal_answers', 'fk_appraisal_answers_review');
+    await queryInterface.removeConstraint('appraisal_answers', 'fk_appraisal_answers_question');
 
     // Drop tables in reverse order
-    await queryInterface.dropTable('budget_transactions');
-    await queryInterface.dropTable('budget_allocations');
-    await queryInterface.dropTable('budgets');
-    await queryInterface.dropTable('budget_categories');
+    await queryInterface.dropTable('appraisal_answers');
+    await queryInterface.dropTable('appraisal_reviews');
+    await queryInterface.dropTable('appraisal_questions');
+    await queryInterface.dropTable('appraisal_forms');
   }
 };

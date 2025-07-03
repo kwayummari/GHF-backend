@@ -7,39 +7,50 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      username: {
-        type: Sequelize.STRING(30),
-        allowNull: true,
-        unique: true,
-        validate: { len: [3, 30], is: /^[a-zA-Z0-9_]+$/ }
+      firstName: {
+        type: Sequelize.STRING(255),
+        allowNull: false
+      },
+      lastName: {
+        type: Sequelize.STRING(255),
+        allowNull: false
       },
       email: {
-        type: Sequelize.STRING,
+        type: Sequelize.STRING(255),
         allowNull: false,
-        unique: true,
-        validate: { isEmail: true }
+        unique: true
       },
       password: {
-        type: Sequelize.STRING,
+        type: Sequelize.STRING(255),
         allowNull: false
       },
       role: {
-        type: Sequelize.ENUM('admin', 'finance_manager', 'hr_manager', 'department_head', 'user'),
-        allowNull: false,
-        defaultValue: 'user'
+        type: Sequelize.ENUM('admin', 'manager', 'employee', 'hr', 'finance'),
+        allowNull: false
       },
-      status: {
-        type: Sequelize.ENUM('active', 'inactive'),
-        allowNull: false,
-        defaultValue: 'active'
+      department_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true
       },
-      created_at: {
+      isActive: {
+        type: Sequelize.BOOLEAN,
         allowNull: false,
-        type: Sequelize.DATE
+        defaultValue: true
       },
-      updated_at: {
+      lastLogin: {
+        type: Sequelize.DATE,
+        allowNull: true
+      },
+      createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
       }
     });
   },

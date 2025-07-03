@@ -1,7 +1,6 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    // Create meetings table
-    await queryInterface.createTable('meetings', {
+    await queryInterface.createTable('training_programs', {
       id: {
         allowNull: false,
         autoIncrement: true,
@@ -24,14 +23,38 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false
       },
+      status: {
+        type: Sequelize.ENUM('planned', 'in_progress', 'completed', 'cancelled'),
+        allowNull: false,
+        defaultValue: 'planned'
+      },
       location: {
         type: Sequelize.STRING(255),
         allowNull: true
       },
-      status: {
-        type: Sequelize.ENUM('scheduled', 'in_progress', 'completed', 'cancelled'),
-        allowNull: false,
-        defaultValue: 'scheduled'
+      trainer_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'users',
+          key: 'id'
+        },
+        onUpdate: 'cascade',
+        onDelete: 'set null'
+      },
+      department_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: 'departments',
+          key: 'id'
+        },
+        onUpdate: 'cascade',
+        onDelete: 'set null'
+      },
+      budget: {
+        type: Sequelize.DECIMAL(10,2),
+        allowNull: true
       },
       createdAt: {
         allowNull: false,
@@ -46,19 +69,18 @@ module.exports = {
       }
     });
 
-    // Create meeting_attendees table
-    await queryInterface.createTable('meeting_attendees', {
+    await queryInterface.createTable('training_participants', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      meeting_id: {
+      program_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'meetings',
+          model: 'training_programs',
           key: 'id'
         },
         onUpdate: 'cascade',
@@ -74,10 +96,18 @@ module.exports = {
         onUpdate: 'cascade',
         onDelete: 'cascade'
       },
-      attendance_status: {
-        type: Sequelize.ENUM('present', 'absent', 'excused', 'pending'),
+      status: {
+        type: Sequelize.ENUM('registered', 'attended', 'completed', 'absent', 'cancelled'),
         allowNull: false,
-        defaultValue: 'pending'
+        defaultValue: 'registered'
+      },
+      attendanceDate: {
+        type: Sequelize.DATE,
+        allowNull: true
+      },
+      completionDate: {
+        type: Sequelize.DATE,
+        allowNull: true
       },
       createdAt: {
         allowNull: false,
@@ -92,72 +122,18 @@ module.exports = {
       }
     });
 
-    // Create meeting_attachments table
-    await queryInterface.createTable('meeting_attachments', {
+    await queryInterface.createTable('training_materials', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      meeting_id: {
+      program_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: 'meetings',
-          key: 'id'
-        },
-        onUpdate: 'cascade',
-        onDelete: 'cascade'
-      },
-      fileName: {
-        type: Sequelize.STRING(255),
-        allowNull: false
-      },
-      filePath: {
-        type: Sequelize.STRING(255),
-        allowNull: false
-      },
-      fileType: {
-        type: Sequelize.STRING(50),
-        allowNull: false
-      },
-      uploadedBy: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'users',
-          key: 'id'
-        },
-        onUpdate: 'cascade',
-        onDelete: 'cascade'
-      },
-      createdAt: {
-        allowNull: false,
-        type: Sequelize.DATE,
-        defaultValue: Sequelize.NOW
-      },
-      updatedAt: {
-        allowNull: false,
-        type: Sequelize.DATE,
-        defaultValue: Sequelize.NOW,
-        onUpdate: Sequelize.NOW
-      }
-    });
-
-    // Create meeting_tasks table
-    await queryInterface.createTable('meeting_tasks', {
-      id: {
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
-        type: Sequelize.INTEGER
-      },
-      meeting_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'meetings',
+          model: 'training_programs',
           key: 'id'
         },
         onUpdate: 'cascade',
@@ -171,21 +147,15 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      priority: {
-        type: Sequelize.ENUM('low', 'medium', 'high'),
-        allowNull: false,
-        defaultValue: 'medium'
+      type: {
+        type: Sequelize.ENUM('document', 'video', 'presentation', 'quiz'),
+        allowNull: false
       },
-      status: {
-        type: Sequelize.ENUM('pending', 'in_progress', 'completed'),
-        allowNull: false,
-        defaultValue: 'pending'
-      },
-      dueDate: {
-        type: Sequelize.DATE,
+      file_path: {
+        type: Sequelize.STRING(255),
         allowNull: true
       },
-      assignedTo: {
+      created_by: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
@@ -209,22 +179,46 @@ module.exports = {
     });
 
     // Add foreign key constraints
-    await queryInterface.addConstraint('meeting_attendees', {
-      fields: ['meeting_id'],
+    await queryInterface.addConstraint('training_programs', {
+      fields: ['trainer_id'],
       type: 'foreign key',
-      name: 'fk_meeting_attendees_meeting',
+      name: 'fk_training_programs_trainer',
       references: {
-        table: 'meetings',
+        table: 'users',
+        field: 'id'
+      },
+      onDelete: 'set null',
+      onUpdate: 'cascade'
+    });
+
+    await queryInterface.addConstraint('training_programs', {
+      fields: ['department_id'],
+      type: 'foreign key',
+      name: 'fk_training_programs_department',
+      references: {
+        table: 'departments',
+        field: 'id'
+      },
+      onDelete: 'set null',
+      onUpdate: 'cascade'
+    });
+
+    await queryInterface.addConstraint('training_participants', {
+      fields: ['program_id'],
+      type: 'foreign key',
+      name: 'fk_training_participants_program',
+      references: {
+        table: 'training_programs',
         field: 'id'
       },
       onDelete: 'cascade',
       onUpdate: 'cascade'
     });
 
-    await queryInterface.addConstraint('meeting_attendees', {
+    await queryInterface.addConstraint('training_participants', {
       fields: ['user_id'],
       type: 'foreign key',
-      name: 'fk_meeting_attendees_user',
+      name: 'fk_training_participants_user',
       references: {
         table: 'users',
         field: 'id'
@@ -233,22 +227,22 @@ module.exports = {
       onUpdate: 'cascade'
     });
 
-    await queryInterface.addConstraint('meeting_attachments', {
-      fields: ['meeting_id'],
+    await queryInterface.addConstraint('training_materials', {
+      fields: ['program_id'],
       type: 'foreign key',
-      name: 'fk_meeting_attachments_meeting',
+      name: 'fk_training_materials_program',
       references: {
-        table: 'meetings',
+        table: 'training_programs',
         field: 'id'
       },
       onDelete: 'cascade',
       onUpdate: 'cascade'
     });
 
-    await queryInterface.addConstraint('meeting_attachments', {
-      fields: ['uploadedBy'],
+    await queryInterface.addConstraint('training_materials', {
+      fields: ['created_by'],
       type: 'foreign key',
-      name: 'fk_meeting_attachments_user',
+      name: 'fk_training_materials_creator',
       references: {
         table: 'users',
         field: 'id'
@@ -257,44 +251,27 @@ module.exports = {
       onUpdate: 'cascade'
     });
 
-    await queryInterface.addConstraint('meeting_tasks', {
-      fields: ['meeting_id'],
-      type: 'foreign key',
-      name: 'fk_meeting_tasks_meeting',
-      references: {
-        table: 'meetings',
-        field: 'id'
-      },
-      onDelete: 'cascade',
-      onUpdate: 'cascade'
-    });
-
-    await queryInterface.addConstraint('meeting_tasks', {
-      fields: ['assignedTo'],
-      type: 'foreign key',
-      name: 'fk_meeting_tasks_user',
-      references: {
-        table: 'users',
-        field: 'id'
-      },
-      onDelete: 'cascade',
-      onUpdate: 'cascade'
+    // Add unique constraint for participants
+    await queryInterface.addConstraint('training_participants', {
+      fields: ['program_id', 'user_id'],
+      type: 'unique',
+      name: 'unique_training_participant'
     });
   },
 
   down: async (queryInterface, Sequelize) => {
-    // Remove foreign key constraints
-    await queryInterface.removeConstraint('meeting_attendees', 'fk_meeting_attendees_meeting');
-    await queryInterface.removeConstraint('meeting_attendees', 'fk_meeting_attendees_user');
-    await queryInterface.removeConstraint('meeting_attachments', 'fk_meeting_attachments_meeting');
-    await queryInterface.removeConstraint('meeting_attachments', 'fk_meeting_attachments_user');
-    await queryInterface.removeConstraint('meeting_tasks', 'fk_meeting_tasks_meeting');
-    await queryInterface.removeConstraint('meeting_tasks', 'fk_meeting_tasks_user');
+    // Remove constraints
+    await queryInterface.removeConstraint('training_programs', 'fk_training_programs_trainer');
+    await queryInterface.removeConstraint('training_programs', 'fk_training_programs_department');
+    await queryInterface.removeConstraint('training_participants', 'fk_training_participants_program');
+    await queryInterface.removeConstraint('training_participants', 'fk_training_participants_user');
+    await queryInterface.removeConstraint('training_materials', 'fk_training_materials_program');
+    await queryInterface.removeConstraint('training_materials', 'fk_training_materials_creator');
+    await queryInterface.removeConstraint('training_participants', 'unique_training_participant');
 
     // Drop tables
-    await queryInterface.dropTable('meeting_tasks');
-    await queryInterface.dropTable('meeting_attachments');
-    await queryInterface.dropTable('meeting_attendees');
-    await queryInterface.dropTable('meetings');
+    await queryInterface.dropTable('training_materials');
+    await queryInterface.dropTable('training_participants');
+    await queryInterface.dropTable('training_programs');
   }
 };

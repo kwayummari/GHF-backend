@@ -1,31 +1,73 @@
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.createTable('bio_data', {
-      user_id: {
+      id: {
         allowNull: false,
+        autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      fingerprint_id: {
-        type: Sequelize.STRING(100),
-        allowNull: true
+      user_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: 'users',
+          key: 'id'
+        },
+        onUpdate: 'cascade',
+        onDelete: 'cascade'
       },
-      signature: {
-        type: Sequelize.TEXT,
-        allowNull: true
-      },
-      marital_status: {
-        type: Sequelize.ENUM('single', 'married', 'divorced', 'widowed'),
+      dateOfBirth: {
+        type: Sequelize.DATE,
         allowNull: false
       },
-      created_at: {
-        allowNull: false,
-        type: Sequelize.DATE
+      gender: {
+        type: Sequelize.ENUM('male', 'female', 'other'),
+        allowNull: false
       },
-      updated_at: {
+      address: {
+        type: Sequelize.TEXT,
+        allowNull: false
+      },
+      phoneNumber: {
+        type: Sequelize.STRING(20),
+        allowNull: false
+      },
+      nationality: {
+        type: Sequelize.STRING(100),
+        allowNull: false
+      },
+      createdAt: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
       }
+    });
+
+    // Add foreign key constraint
+    await queryInterface.addConstraint('bio_data', {
+      fields: ['user_id'],
+      type: 'foreign key',
+      name: 'fk_bio_data_user',
+      references: {
+        table: 'users',
+        field: 'id'
+      },
+      onDelete: 'cascade',
+      onUpdate: 'cascade'
+    });
+
+    // Add unique constraint
+    await queryInterface.addConstraint('bio_data', {
+      fields: ['user_id'],
+      type: 'unique',
+      name: 'unique_user_bio_data'
     });
   },
 

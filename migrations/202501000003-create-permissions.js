@@ -8,44 +8,35 @@ module.exports = {
         type: Sequelize.INTEGER
       },
       name: {
-        type: Sequelize.STRING(50),
+        type: Sequelize.STRING(255),
         allowNull: false,
         unique: true
-      },
-      module: {
-        type: Sequelize.STRING(50),
-        allowNull: false
-      },
-      action: {
-        type: Sequelize.STRING(50),
-        allowNull: false
       },
       description: {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      status: {
-        type: Sequelize.ENUM('active', 'inactive'),
+      createdAt: {
         allowNull: false,
-        defaultValue: 'active'
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW
       },
-      created_by: {
-        type: Sequelize.INTEGER,
-        allowNull: true
-      },
-      updated_by: {
-        type: Sequelize.INTEGER,
-        allowNull: true
-      },
-      created_at: {
+      updatedAt: {
         allowNull: false,
-        type: Sequelize.DATE
-      },
-      updated_at: {
-        allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.NOW,
+        onUpdate: Sequelize.NOW
       }
     });
+
+    // Add initial permissions
+    await queryInterface.bulkInsert('permissions', [
+      { name: 'view_dashboard', description: 'Can view dashboard' },
+      { name: 'manage_users', description: 'Can manage users' },
+      { name: 'manage_departments', description: 'Can manage departments' },
+      { name: 'manage_roles', description: 'Can manage roles' },
+      { name: 'manage_permissions', description: 'Can manage permissions' }
+    ], {});
   },
 
   down: async (queryInterface, Sequelize) => {
