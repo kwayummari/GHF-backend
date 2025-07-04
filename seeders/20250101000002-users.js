@@ -2,34 +2,52 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.bulkInsert('Users', [
       {
+        id: 1,
         username: 'admin',
         email: 'admin@example.com',
-        password: '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // admin123
-        first_name: 'System',
-        last_name: 'Administrator',
+        password: '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+        first_name: 'Alice',
+        last_name: 'Smith',
         role: 'admin',
-        status: 'active',
-        department_id: 1, // Administration
-        created_at: new Date(),
-        updated_at: new Date()
+        is_active: true,
+        created_at: new Date('2025-06-13 19:05:21'),
+        updated_at: new Date('2025-06-13 19:05:21')
       },
       {
-        username: 'hr_manager',
-        email: 'hr@example.com',
-        password: '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // admin123
+        id: 2,
+        username: 'bob',
+        email: 'bob@example.com',
+        password: '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+        first_name: 'Bob',
+        last_name: 'Johnson',
+        role: 'user',
+        is_active: true,
+        created_at: new Date('2025-06-13 19:05:21'),
+        updated_at: new Date('2025-06-13 19:05:21')
+      },
+      {
+        id: 3,
+        username: 'charlie',
+        email: 'charlie@example.com',
+        password: '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+        first_name: 'Charlie',
+        last_name: 'Brown',
+        role: 'user',
+        is_active: true,
+        created_at: new Date('2025-06-13 19:05:21'),
+        updated_at: new Date('2025-06-13 19:05:21')
+      },
+      {
+        id: 4,
+        username: 'hrmanager',
+        email: 'hrmanager@example.com',
+        password: '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
         first_name: 'HR',
         last_name: 'Manager',
         role: 'hr_manager',
-        status: 'active',
-        department_id: 3, // Human Resources
-        created_at: new Date(),
-        updated_at: new Date()
-      },
-      {
-        username: 'finance_manager',
-        email: 'finance@example.com',
-        password: '$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', // admin123
-        first_name: 'Finance',
+        is_active: true,
+        created_at: new Date('2025-06-16 00:06:26'),
+        updated_at: new Date('2025-06-16 00:06:26')
         last_name: 'Manager',
         role: 'finance_manager',
         status: 'active',

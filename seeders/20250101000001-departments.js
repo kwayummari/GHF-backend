@@ -2,32 +2,16 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.bulkInsert('Departments', [
       {
-        department_name: 'Administration',
-        description: 'Responsible for administrative functions and operations',
-        status: 'active',
-        created_at: new Date(),
-        updated_at: new Date()
-      },
-      {
-        department_name: 'Finance',
-        description: 'Handles financial planning, budgeting, and accounting',
-        status: 'active',
-        created_at: new Date(),
-        updated_at: new Date()
-      },
-      {
+        id: 1,
         department_name: 'Human Resources',
-        description: 'Manages personnel, recruitment, and employee relations',
-        status: 'active',
-        created_at: new Date(),
-        updated_at: new Date()
+        created_at: new Date('2025-06-13 19:05:21'),
+        updated_at: new Date('2025-06-13 19:05:21')
       },
       {
-        department_name: 'Information Technology',
-        description: 'Manages IT infrastructure and systems',
-        status: 'active',
-        created_at: new Date(),
-        updated_at: new Date()
+        id: 2,
+        department_name: 'Finance',
+        created_at: new Date('2025-06-13 19:05:21'),
+        updated_at: new Date('2025-06-13 19:05:21')
       },
       {
         department_name: 'Operations',
