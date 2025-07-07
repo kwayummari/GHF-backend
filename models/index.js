@@ -50,6 +50,7 @@ const SalaryComponent = require('./SalaryComponent');
 const Menu = require('./Menu');
 const MenuPermission = require('./MenuPermission');
 const RoleMenuAccess = require('./RoleMenuAccess');
+const ActivityLog = require('./ActivityLog');
 // const Timesheet = require('./Timesheet');
 // const TimesheetEntry = require('./TimesheetEntry');
 
@@ -102,6 +103,7 @@ const models = {
   Menu,
   MenuPermission,
   RoleMenuAccess,
+  ActivityLog,
   // Timesheet,
   // TimesheetEntry,
 };

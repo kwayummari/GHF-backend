@@ -9,6 +9,7 @@ const documentRoutes = require('./documentRoutes');
 const roleRoutes = require('./roleRoutes');
 const menuRoutes = require('./menuRoutes');
 const meetingRoutes = require('./meetingRoutes');
+const activityLogsRoutes = require('./activityLogs');
 
 const router = express.Router();
 
@@ -23,6 +24,8 @@ router.use('/attendance', attendanceRoutes);
 router.use('/documents', documentRoutes);
 router.use('/roles', roleRoutes);
 router.use('/menus', menuRoutes);
+router.use('/settings/logs', activityLogsRoutes);
+
 
 // Root API information
 router.get('/', (req, res) => {
