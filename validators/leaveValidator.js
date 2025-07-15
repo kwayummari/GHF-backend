@@ -5,39 +5,43 @@ const { body } = require('express-validator');
  */
 const leaveApplicationValidator = [
   body('type_id')
-    .isInt({ min: 1 }).withMessage('Valid leave type is required'),
-  
+    .notEmpty()
+    .withMessage('Leave type is required')
+    .isInt({ min: 1 })
+    .withMessage('Leave type must be a valid ID'),
+
   body('starting_date')
-    .isDate().withMessage('Start date must be a valid date'),
-  
+    .notEmpty()
+    .withMessage('Start date is required')
+    .isDate()
+    .withMessage('Start date must be a valid date'),
+
   body('end_date')
-    .isDate().withMessage('End date must be a valid date')
-    .custom((value, { req }) => {
-      const startDate = new Date(req.body.starting_date);
-      const endDate = new Date(value);
-      
-      if (endDate < startDate) {
-        throw new Error('End date must be after start date');
-      }
-      
-      return true;
-    }),
-  
+    .notEmpty()
+    .withMessage('End date is required')
+    .isDate()
+    .withMessage('End date must be a valid date'),
+
   body('comment')
     .optional()
-    .trim(),
-  
+    .isLength({ max: 500 })
+    .withMessage('Comment must be less than 500 characters'),
+
   body('attachment_id')
-    .optional()
-    .isInt({ min: 1 }).withMessage('Attachment ID must be a positive integer'),
+    .optional({ checkFalsy: true })
+    .isInt({ min: 1 })
+    .withMessage('Attachment ID must be a valid ID'),
   
+
   body('save_as_draft')
     .optional()
-    .isBoolean().withMessage('Save as draft must be a boolean value'),
-  
+    .isBoolean()
+    .withMessage('Save as draft must be a boolean'),
+
   body('submit')
     .optional()
-    .isBoolean().withMessage('Submit must be a boolean value'),
+    .isBoolean()
+    .withMessage('Submit must be a boolean')
 ];
 
 /**
