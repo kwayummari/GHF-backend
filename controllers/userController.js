@@ -6,6 +6,7 @@ const PersonalEmployeeData = require('../models/PersonalEmployeeData');
 const Department = require('../models/Department');
 const Role = require('../models/Role');
 const UserRole = require('../models/UserRole');
+const { sequelize } = require('../models');
 // ADD THESE MISSING IMPORTS
 const EmergencyContact = require('../models/EmergencyContact');
 const NextOfKin = require('../models/NextOfKin');
@@ -809,92 +810,82 @@ const createUser = async (req, res, next) => {
   }
 };
 
-const updateEmployeePartial = async (req, res) => {
-  const { id } = req.params;
-  const updateData = req.body;
-
+const updateEmployeePartial = async (req, res, next) => {
   try {
-    // Validate employee exists
-    const employee = await Employee.findByPk(id);
-    if (!employee) {
-      return res.status(404).json({
-        success: false,
-        message: "Employee not found",
-      });
+    const { id } = req.params;
+    const updateData = req.body;
+
+    // Find the user
+    const user = await User.findByPk(id);
+
+    if (!user) {
+      return errorResponse(
+        res,
+        StatusCodes.NOT_FOUND,
+        'User not found'
+      );
     }
 
-    // Handle different types of partial updates based on the data structure
-    const transaction = await sequelize.transaction();
+    // Start a transaction
+    const transaction = await User.sequelize.transaction();
 
     try {
-      // Update basic employee info if provided
+      // Update basic user information if provided
       if (updateData.first_name || updateData.middle_name || updateData.sur_name ||
         updateData.email || updateData.phone_number || updateData.gender ||
         updateData.status || updateData.address) {
-        await employee.update({
-          first_name: updateData.first_name || employee.first_name,
-          middle_name: updateData.middle_name || employee.middle_name,
-          sur_name: updateData.sur_name || employee.sur_name,
-          email: updateData.email || employee.email,
-          phone_number: updateData.phone_number || employee.phone_number,
-          gender: updateData.gender || employee.gender,
-          status: updateData.status || employee.status,
-          address: updateData.address || employee.address,
+        await user.update({
+          first_name: updateData.first_name || user.first_name,
+          middle_name: updateData.middle_name || user.middle_name,
+          sur_name: updateData.sur_name || user.sur_name,
+          email: updateData.email || user.email,
+          phone_number: updateData.phone_number || user.phone_number,
+          gender: updateData.gender || user.gender,
+          status: updateData.status || user.status,
+          address: updateData.address || user.address,
         }, { transaction });
       }
 
-      // Update bio data if provided
+      // Update/create bio data if provided
       if (updateData.bioData) {
-        let bioData = await BioData.findOne({ where: { employee_id: id } });
-        if (bioData) {
-          await bioData.update(updateData.bioData, { transaction });
-        } else {
-          await BioData.create({
-            employee_id: id,
-            ...updateData.bioData,
-          }, { transaction });
-        }
+        await BioData.upsert({
+          user_id: id,
+          ...updateData.bioData
+        }, { transaction });
       }
 
-      // Update personal employee data if provided
+      // Update/create personal employee data if provided
       if (updateData.personalEmployeeData) {
-        let personalData = await PersonalEmployeeData.findOne({ where: { employee_id: id } });
-        if (personalData) {
-          await personalData.update(updateData.personalEmployeeData, { transaction });
-        } else {
-          await PersonalEmployeeData.create({
-            employee_id: id,
-            ...updateData.personalEmployeeData,
-          }, { transaction });
-        }
+        await PersonalEmployeeData.upsert({
+          user_id: id,
+          ...updateData.personalEmployeeData
+        }, { transaction });
       }
 
-      // Update basic employee data (employment info) if provided
+      // Update/create basic employee data if provided
       if (updateData.basicEmployeeData) {
-        let basicData = await BasicEmployeeData.findOne({ where: { employee_id: id } });
-        if (basicData) {
-          await basicData.update(updateData.basicEmployeeData, { transaction });
-        } else {
-          await BasicEmployeeData.create({
-            employee_id: id,
-            ...updateData.basicEmployeeData,
-          }, { transaction });
-        }
+        await BasicEmployeeData.upsert({
+          user_id: id,
+          ...updateData.basicEmployeeData
+        }, { transaction });
       }
 
       // Update emergency contacts if provided
       if (updateData.emergency_contact_name || updateData.emergency_contact_phone ||
         updateData.emergency_contact_relationship) {
         // Remove existing emergency contacts
-        await EmergencyContact.destroy({ where: { employee_id: id }, transaction });
+        await EmergencyContact.destroy({
+          where: { user_id: id },
+          transaction
+        });
 
-        // Add new emergency contact
+        // Add new emergency contact if data provided
         if (updateData.emergency_contact_name && updateData.emergency_contact_phone) {
           await EmergencyContact.create({
-            employee_id: id,
+            user_id: id,
             name: updateData.emergency_contact_name,
             phone_number: updateData.emergency_contact_phone,
-            relationship: updateData.emergency_contact_relationship,
+            relationship: updateData.emergency_contact_relationship || 'Not specified',
           }, { transaction });
         }
       }
@@ -903,86 +894,98 @@ const updateEmployeePartial = async (req, res) => {
       if (updateData.next_of_kin_name || updateData.next_of_kin_phone ||
         updateData.next_of_kin_relationship) {
         // Remove existing next of kin
-        await NextOfKin.destroy({ where: { employee_id: id }, transaction });
+        await NextOfKin.destroy({
+          where: { user_id: id },
+          transaction
+        });
 
-        // Add new next of kin
+        // Add new next of kin if data provided
         if (updateData.next_of_kin_name && updateData.next_of_kin_phone) {
           await NextOfKin.create({
-            employee_id: id,
+            user_id: id,
             name: updateData.next_of_kin_name,
             phone_number: updateData.next_of_kin_phone,
-            relationship: updateData.next_of_kin_relationship,
+            relationship: updateData.next_of_kin_relationship || 'Not specified',
             percentage: 100,
           }, { transaction });
         }
       }
+
       // Update roles if provided
       if (updateData.role_ids && Array.isArray(updateData.role_ids)) {
-        // Remove existing role assignments
-        await UserRole.destroy({ where: { user_id: id }, transaction });
+        // Delete current roles
+        await UserRole.destroy({
+          where: { user_id: id },
+          transaction
+        });
 
-        // Add new role assignments
-        const roleAssignments = updateData.role_ids.map(roleId => ({
-          user_id: id,
-          role_id: roleId,
-        }));
-
-        if (roleAssignments.length > 0) {
-          await UserRole.bulkCreate(roleAssignments, { transaction });
+        // Add new roles
+        for (const roleId of updateData.role_ids) {
+          await UserRole.create({
+            user_id: id,
+            role_id: roleId
+          }, { transaction });
         }
       }
 
+      // Commit transaction
       await transaction.commit();
 
-      // Fetch updated employee data
-      const updatedEmployee = await Employee.findByPk(id, {
+      // Get updated user with all related information
+      const updatedUser = await User.findOne({
+        where: { id },
         include: [
-          {
-            model: BioData,
-            as: 'bioData',
-          },
-          {
-            model: PersonalEmployeeData,
-            as: 'personalEmployeeData',
-          },
           {
             model: BasicEmployeeData,
             as: 'basicEmployeeData',
+            include: [
+              {
+                model: Department,
+                as: 'department',
+                attributes: ['id', 'department_name']
+              }
+            ]
+          },
+          {
+            model: BioData,
+            as: 'bioData'
+          },
+          {
+            model: PersonalEmployeeData,
+            as: 'personalEmployeeData'
           },
           {
             model: EmergencyContact,
-            as: 'emergencyContacts',
+            as: 'emergencyContacts'
           },
           {
             model: NextOfKin,
-            as: 'nextOfKin',
+            as: 'nextOfKin'
           },
           {
             model: Role,
             as: 'roles',
             through: { attributes: [] },
-          },
-        ],
+            attributes: ['id', 'role_name']
+          }
+        ]
       });
 
-      res.status(200).json({
-        success: true,
-        message: "Employee data updated successfully",
-        data: updatedEmployee,
-      });
+      return successResponse(
+        res,
+        StatusCodes.OK,
+        'Employee data updated successfully',
+        updatedUser
+      );
 
     } catch (error) {
+      // Rollback transaction in case of error
       await transaction.rollback();
       throw error;
     }
-
   } catch (error) {
-    console.error("Error updating employee partial data:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to update employee data",
-      error: error.message,
-    });
+    logger.error('Update employee partial error:', error);
+    next(error);
   }
 };
 
