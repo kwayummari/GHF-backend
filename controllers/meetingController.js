@@ -4,7 +4,7 @@
  */
 const { StatusCodes } = require('http-status-codes');
 const { Op, Sequelize } = require('sequelize');
-const Meeting = require('../models/Meeting');
+const Meeting = require('../models/meeting');
 const MeetingAttendee = require('../models/MeetingAtendee');
 const MeetingTask = require('../models/MeetingTask');
 const MeetingDocument = require('../models/MeetingDocument');
