@@ -126,7 +126,6 @@ const testConnection = async () => {
     return false;
   }
 };
-
 module.exports = {
   sequelize,
   Sequelize,
