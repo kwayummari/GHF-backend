@@ -916,7 +916,6 @@ const updateEmployeePartial = async (req, res) => {
           }, { transaction });
         }
       }
-
       // Update roles if provided
       if (updateData.role_ids && Array.isArray(updateData.role_ids)) {
         // Remove existing role assignments
