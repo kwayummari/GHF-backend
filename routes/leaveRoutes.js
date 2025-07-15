@@ -316,9 +316,10 @@ router.get('/approvals', authenticate, leaveController.getLeaveApplicationsForAp
  *       401:
  *         description: Unauthorized
  */
-router.post('/types', authenticate, authorize(['Admin', 'HR Manager']), leaveController.createLeaveType);
-router.put('/types/:id', authenticate, authorize(['Admin', 'HR Manager']), leaveController.updateLeaveType);
-router.delete('/types/:id', authenticate, authorize(['Admin', 'HR Manager']), leaveController.deleteLeaveType);
+router.get('/types', authenticate, leaveController.getLeaveTypes);
+router.post('/types', authenticate, leaveController.createLeaveType);
+router.put('/types/:id', authenticate, leaveController.updateLeaveType);
+router.delete('/types/:id', authenticate, leaveController.deleteLeaveType);
 
 /**
  * @swagger
