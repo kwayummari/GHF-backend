@@ -316,7 +316,9 @@ router.get('/approvals', authenticate, leaveController.getLeaveApplicationsForAp
  *       401:
  *         description: Unauthorized
  */
-router.get('/types', authenticate, leaveController.getLeaveTypes);
+router.post('/types', authenticate, authorize(['Admin', 'HR Manager']), leaveController.createLeaveType);
+router.put('/types/:id', authenticate, authorize(['Admin', 'HR Manager']), leaveController.updateLeaveType);
+router.delete('/types/:id', authenticate, authorize(['Admin', 'HR Manager']), leaveController.deleteLeaveType);
 
 /**
  * @swagger
@@ -373,6 +375,7 @@ router.get('/types', authenticate, leaveController.getLeaveTypes);
  *         description: Overlapping leave application exists
  */
 router.post('/', authenticate, leaveApplicationValidator, validateRequest, leaveController.createLeaveApplication);
+
 
 /**
  * @swagger

@@ -572,6 +572,32 @@ const createLeaveApplication = async (req, res, next) => {
 };
 
 /**
+ * Create a new leave type
+ */
+const createLeaveType = async (req, res, next) => {
+  try {
+    const { name, minimum_days, maximum_days, description } = req.body;
+
+    const leaveType = await LeaveType.create({
+      name,
+      minimum_days: minimum_days || 1,
+      maximum_days,
+      description
+    });
+
+    return successResponse(
+      res,
+      StatusCodes.CREATED,
+      'Leave type created successfully',
+      leaveType
+    );
+  } catch (error) {
+    logger.error('Create leave type error:', error);
+    next(error);
+  }
+};
+
+/**
  * Get leave applications for approval (only for assigned approvers)
  */
 const getLeaveApplicationsForApproval = async (req, res, next) => {
@@ -1717,6 +1743,63 @@ const validateLeaveBalance = async (userId, typeId, requestedDays, year) => {
   return balance;
 };
 
+/**
+ * Update leave type
+ */
+const updateLeaveType = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, minimum_days, maximum_days, description } = req.body;
+
+    const leaveType = await LeaveType.findByPk(id);
+    if (!leaveType) {
+      return errorResponse(res, StatusCodes.NOT_FOUND, 'Leave type not found');
+    }
+
+    await leaveType.update({
+      name,
+      minimum_days,
+      maximum_days,
+      description
+    });
+
+    return successResponse(
+      res,
+      StatusCodes.OK,
+      'Leave type updated successfully',
+      leaveType
+    );
+  } catch (error) {
+    logger.error('Update leave type error:', error);
+    next(error);
+  }
+};
+
+/**
+* Delete leave type
+*/
+const deleteLeaveType = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const leaveType = await LeaveType.findByPk(id);
+    if (!leaveType) {
+      return errorResponse(res, StatusCodes.NOT_FOUND, 'Leave type not found');
+    }
+
+    await leaveType.destroy();
+
+    return successResponse(
+      res,
+      StatusCodes.OK,
+      'Leave type deleted successfully'
+    );
+  } catch (error) {
+    logger.error('Delete leave type error:', error);
+    next(error);
+  }
+};
+
 // Add to createLeaveApplication function (after calculating leaveDays):
 /*
 // Validate leave balance
@@ -1774,5 +1857,8 @@ module.exports = {
   calculateLeaveBalance,
   validateLeaveBalance,
   getLeaveApplicationsForApproval,
-  findUserSupervisor
+  findUserSupervisor,
+  createLeaveType,
+  updateLeaveType,
+  deleteLeaveType
 };
