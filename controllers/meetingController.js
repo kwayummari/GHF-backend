@@ -197,55 +197,39 @@ const getMeetingById = async (req, res, next) => {
  */
 const createMeeting = async (req, res, next) => {
     try {
-        const {
-            meeting_title,
-            meeting_type,
-            meeting_date,
-            start_time,
-            end_time,
-            location,
-            is_virtual,
-            meeting_link,
-            chairperson,
-            organizer,
-            agenda_items,
-            attendees,
-        } = req.body;
+        const meetingData = { ...req.body };
 
-        console.log('req.body:', req.body);
+        // Convert HH:mm to HH:mm:ss if needed
+        if (meetingData.start_time && !meetingData.start_time.includes(':00')) {
+            meetingData.start_time = meetingData.start_time + ':00';
+        }
+        if (meetingData.end_time && !meetingData.end_time.includes(':00')) {
+            meetingData.end_time = meetingData.end_time + ':00';
+        }
 
-        const meetingData = {
-            meeting_title,
-            meeting_type,
-            meeting_date,
-            start_time,
-            end_time,
-            location,
-            is_virtual,
-            meeting_link,
-            chairperson,
-            organizer,
-            agenda_items,
-            created_by: req.user.id,
-        };
+        // Set defaults for optional fields
+        meetingData.status = meetingData.status || 'scheduled';
+        meetingData.is_virtual = Boolean(meetingData.is_virtual);
+        meetingData.created_by = req.user.id;
 
+        // Create meeting
         const meeting = await Meeting.create(meetingData);
 
-        // Add attendees if provided
-        if (attendees && attendees.length > 0) {
-            const attendeeData = attendees.map(attendee => ({
-                meeting_id: meeting.id,
-                ...attendee,
-            }));
-            await MeetingAttendee.bulkCreate(attendeeData);
+        // Handle attendees if provided
+        if (meetingData.attendees && Array.isArray(meetingData.attendees)) {
+            const attendeePromises = meetingData.attendees.map(attendee =>
+                MeetingAttendee.create({
+                    meeting_id: meeting.id,
+                    name: attendee.name,
+                    email: attendee.email,
+                    role: attendee.role || 'attendee',
+                    is_required: Boolean(attendee.is_required),
+                    attendance_status: 'invited'
+                })
+            );
+            await Promise.all(attendeePromises);
         }
 
-        // Send meeting invitations
-        if (attendees && attendees.length > 0) {
-            await sendMeetingInvitations(meeting, attendees);
-        }
-
-        // Fetch created meeting with associations
         const createdMeeting = await Meeting.findByPk(meeting.id, {
             include: [
                 {

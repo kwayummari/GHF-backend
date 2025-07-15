@@ -14,9 +14,10 @@ const logger = require('../utils/logger');
 const getAllDepartments = async (req, res, next) => {
   try {
     const departments = await Department.findAll({
+      attributes: ['id', 'department_name', 'description', 'head_id', 'budget', 'location', 'is_active', 'created_at', 'updated_at'],
       order: [['department_name', 'ASC']]
     });
-    
+
     return successResponse(
       res,
       StatusCodes.OK,

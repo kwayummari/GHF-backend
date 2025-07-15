@@ -7,13 +7,14 @@ const createMeetingValidator = [
     body('meeting_title')
         .notEmpty()
         .withMessage('Meeting title is required')
-        .isLength({ min: 1, max: 255 })
-        .withMessage('Meeting title must be between 1 and 255 characters'),
+        .isLength({ min: 3, max: 255 })
+        .withMessage('Meeting title must be between 3 and 255 characters'),
 
-    body('meeting_type')
-        .optional()
-        .isIn(['board', 'management', 'department', 'team', 'project', 'one_on_one', 'client'])
-        .withMessage('Invalid meeting type'),
+    body('meeting_date')
+        .notEmpty()
+        .withMessage('Meeting date is required')
+        .isISO8601()
+        .withMessage('Meeting date must be a valid date'),
 
     body('meeting_date')
         .notEmpty()
@@ -34,20 +35,14 @@ const createMeetingValidator = [
     body('start_time')
         .notEmpty()
         .withMessage('Start time is required')
-        .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
+        .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
         .withMessage('Start time must be in HH:MM format'),
 
     body('end_time')
         .notEmpty()
         .withMessage('End time is required')
-        .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
-        .withMessage('End time must be in HH:MM format')
-        .custom((value, { req }) => {
-            if (req.body.start_time && value <= req.body.start_time) {
-                throw new Error('End time must be after start time');
-            }
-            return true;
-        }),
+        .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)
+        .withMessage('End time must be in HH:MM format'),
 
     body('location')
         .optional()
@@ -73,30 +68,16 @@ const createMeetingValidator = [
 
     body('chairperson')
         .notEmpty()
-        .withMessage('Chairperson is required')
-        .isLength({ min: 1, max: 100 })
-        .withMessage('Chairperson name must be between 1 and 100 characters'),
+        .withMessage('Chairperson is required'),
 
     body('organizer')
         .notEmpty()
-        .withMessage('Organizer is required')
-        .isLength({ min: 1, max: 100 })
-        .withMessage('Organizer name must be between 1 and 100 characters'),
+        .withMessage('Organizer is required'),
 
     body('agenda_items')
         .optional()
         .isArray()
-        .withMessage('Agenda items must be an array')
-        .custom((items) => {
-            if (items && items.length > 0) {
-                for (const item of items) {
-                    if (typeof item !== 'string' || item.trim().length === 0) {
-                        throw new Error('All agenda items must be non-empty strings');
-                    }
-                }
-            }
-            return true;
-        }),
+        .withMessage('Agenda items must be an array'),
 
     body('attendees')
         .optional()
