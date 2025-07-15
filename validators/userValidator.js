@@ -142,9 +142,9 @@ const createUserValidator = [
     .optional()
     .isFloat({ min: 0 }).withMessage('Salary must be a positive number'),
 
-  body('basic_employee_data.supervisor_id')
-    .optional()
-    .isInt({ min: 1 }).withMessage('Supervisor ID must be a positive integer'),
+  // body('basic_employee_data.supervisor_id')
+  //   .optional()
+  //   .isInt({ min: 1 }).withMessage('Supervisor ID must be a positive integer'),
 
   body('basic_employee_data.nida')
     .optional()

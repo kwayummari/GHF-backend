@@ -235,175 +235,6 @@ const getUserById = async (req, res, next) => {
 };
 
 /**
- * Update user information
- * @param {Object} req - Express request object
- * @param {Object} res - Express response object
- * @param {Function} next - Express next function
- */
-const updateUser = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const {
-      first_name,
-      middle_name,
-      sur_name,
-      email,
-      phone_number,
-      gender,
-      status,
-      basicEmployeeData,
-      bioData,
-      personalEmployeeData,
-      roles
-    } = req.body;
-
-    // Find the user
-    const user = await User.findByPk(id);
-
-    if (!user) {
-      return errorResponse(
-        res,
-        StatusCodes.NOT_FOUND,
-        'User not found'
-      );
-    }
-
-    // Start a transaction
-    const transaction = await User.sequelize.transaction();
-
-    try {
-      // Update user base information
-      await user.update({
-        first_name: first_name || user.first_name,
-        middle_name,
-        sur_name: sur_name || user.sur_name,
-        email: email || user.email,
-        phone_number,
-        gender: gender || user.gender,
-        status: status || user.status
-      }, { transaction });
-
-      // Update/create basic employee data if provided
-      if (basicEmployeeData) {
-        let employeeData = await BasicEmployeeData.findOne({
-          where: { user_id: id },
-          transaction
-        });
-
-        if (employeeData) {
-          await employeeData.update(basicEmployeeData, { transaction });
-        } else {
-          await BasicEmployeeData.create({
-            user_id: id,
-            ...basicEmployeeData
-          }, { transaction });
-        }
-      }
-
-      // Update/create bio data if provided
-      if (bioData) {
-        let existingBioData = await BioData.findOne({
-          where: { user_id: id },
-          transaction
-        });
-
-        if (existingBioData) {
-          await existingBioData.update(bioData, { transaction });
-        } else {
-          await BioData.create({
-            user_id: id,
-            ...bioData
-          }, { transaction });
-        }
-      }
-
-      // Update/create personal employee data if provided
-      if (personalEmployeeData) {
-        let personalData = await PersonalEmployeeData.findOne({
-          where: { user_id: id },
-          transaction
-        });
-
-        if (personalData) {
-          await personalData.update(personalEmployeeData, { transaction });
-        } else {
-          await PersonalEmployeeData.create({
-            user_id: id,
-            ...personalEmployeeData
-          }, { transaction });
-        }
-      }
-
-      // Update roles if provided
-      if (roles && Array.isArray(roles)) {
-        // Delete current roles
-        await UserRole.destroy({
-          where: { user_id: id },
-          transaction
-        });
-
-        // Add new roles
-        for (const roleId of roles) {
-          await UserRole.create({
-            user_id: id,
-            role_id: roleId
-          }, { transaction });
-        }
-      }
-
-      // Commit transaction
-      await transaction.commit();
-
-      // Get updated user with all related information
-      const updatedUser = await User.findOne({
-        where: { id },
-        include: [
-          {
-            model: BasicEmployeeData,
-            as: 'basicEmployeeData',
-            include: [
-              {
-                model: Department,
-                as: 'department',
-                attributes: ['id', 'department_name']
-              }
-            ]
-          },
-          {
-            model: BioData,
-            as: 'bioData'
-          },
-          {
-            model: PersonalEmployeeData,
-            as: 'personalEmployeeData'
-          },
-          {
-            model: Role,
-            as: 'roles',
-            through: { attributes: [] },
-            attributes: ['id', 'role_name']
-          }
-        ]
-      });
-
-      return successResponse(
-        res,
-        StatusCodes.OK,
-        'User updated successfully',
-        updatedUser
-      );
-    } catch (error) {
-      // Rollback transaction in case of error
-      await transaction.rollback();
-      throw error;
-    }
-  } catch (error) {
-    logger.error('Update user error:', error);
-    next(error);
-  }
-};
-
-/**
  * Delete user
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
@@ -455,14 +286,28 @@ const createUser = async (req, res, next) => {
       phone_number,
       gender,
       password,
+      status = 'active',
+      address,
       // Employee data
       basic_employee_data = {},
+      basicEmployeeData = {}, // Support both naming conventions
       bio_data = {},
+      bioData = {}, // Support both naming conventions
       personal_employee_data = {},
+      personalEmployeeData = {}, // Support both naming conventions
+      // Multiple contacts support
       emergency_contacts = [],
       next_of_kin = [],
+      // Backward compatibility - single contact fields
+      emergency_contact_name,
+      emergency_contact_phone,
+      emergency_contact_relationship,
+      next_of_kin_name,
+      next_of_kin_phone,
+      next_of_kin_relationship,
       // Roles
       roles = [],
+      role_ids = [],
       // Options
       send_welcome_email = true,
       generate_random_password = false
@@ -479,272 +324,219 @@ const createUser = async (req, res, next) => {
     });
 
     if (existingUser) {
-      const conflictField = existingUser.email === email ? 'email' : 'phone_number';
+      const conflictField = existingUser.email === email ? 'email' : 'phone number';
       return errorResponse(
         res,
         StatusCodes.CONFLICT,
-        'User already exists',
-        [{ field: conflictField, message: `${conflictField} already in use` }]
+        `User with this ${conflictField} already exists`
       );
     }
 
-    // Generate random password if requested
-    let userPassword = password || first_name + "@2025";
-    if (generate_random_password) {
-      userPassword = crypto.randomBytes(8).toString('hex').toUpperCase();
+    // Generate password if needed
+    let userPassword = password;
+    if (generate_random_password || !password) {
+      userPassword = crypto.randomBytes(8).toString('hex');
     }
 
-    if (!userPassword) {
-      return errorResponse(
-        res,
-        StatusCodes.BAD_REQUEST,
-        'Password is required',
-        [{ field: 'password', message: 'Password must be provided or generate_random_password must be true' }]
-      );
-    }
-
-    // Validate roles if provided
-    if (roles.length > 0) {
-      const existingRoles = await Role.findAll({
-        where: { id: { [Op.in]: roles } }
-      });
-
-      if (existingRoles.length !== roles.length) {
-        return errorResponse(
-          res,
-          StatusCodes.BAD_REQUEST,
-          'Some roles do not exist',
-          [{ field: 'roles', message: 'One or more role IDs are invalid' }]
-        );
-      }
-    }
-
-    // Validate department if provided in basic_employee_data
-    if (basic_employee_data.department_id) {
-      const department = await Department.findByPk(basic_employee_data.department_id);
-      if (!department) {
-        return errorResponse(
-          res,
-          StatusCodes.BAD_REQUEST,
-          'Department not found',
-          [{ field: 'basic_employee_data.department_id', message: 'Department does not exist' }]
-        );
-      }
-    }
-
-    // Validate supervisor if provided in basic_employee_data
-    if (basic_employee_data.supervisor_id) {
-      const supervisor = await User.findByPk(basic_employee_data.supervisor_id);
-      if (!supervisor) {
-        return errorResponse(
-          res,
-          StatusCodes.BAD_REQUEST,
-          'Supervisor not found',
-          [{ field: 'basic_employee_data.supervisor_id', message: 'Supervisor does not exist' }]
-        );
-      }
-    }
-
-    // Validate NIDA uniqueness if provided
-    if (basic_employee_data.nida) {
-      const existingNida = await BasicEmployeeData.findOne({
-        where: { nida: basic_employee_data.nida }
-      });
-
-      if (existingNida) {
-        return errorResponse(
-          res,
-          StatusCodes.CONFLICT,
-          'NIDA number already exists',
-          [{ field: 'basic_employee_data.nida', message: 'NIDA number must be unique' }]
-        );
-      }
-    }
-
-    // Validate registration number uniqueness if provided
-    if (basic_employee_data.registration_number) {
-      const existingRegNumber = await BasicEmployeeData.findOne({
-        where: { registration_number: basic_employee_data.registration_number }
-      });
-
-      if (existingRegNumber) {
-        return errorResponse(
-          res,
-          StatusCodes.CONFLICT,
-          'Registration number already exists',
-          [{ field: 'basic_employee_data.registration_number', message: 'Registration number must be unique' }]
-        );
-      }
-    }
-
-    // Validate national ID uniqueness if provided in bio_data
-    if (bio_data.national_id) {
-      const existingNationalId = await BioData.findOne({
-        where: { national_id: bio_data.national_id }
-      });
-
-      if (existingNationalId) {
-        return errorResponse(
-          res,
-          StatusCodes.CONFLICT,
-          'National ID already exists',
-          [{ field: 'bio_data.national_id', message: 'National ID must be unique' }]
-        );
-      }
-    }
-
-    // Validate next of kin percentages sum to 100% if provided
-    if (next_of_kin.length > 0) {
-      const totalPercentage = next_of_kin.reduce((sum, kin) => sum + (kin.percentage || 0), 0);
-      if (totalPercentage !== 100) {
-        return errorResponse(
-          res,
-          StatusCodes.BAD_REQUEST,
-          'Next of kin percentages must sum to 100%',
-          [{ field: 'next_of_kin', message: `Current total is ${totalPercentage}%, must be exactly 100%` }]
-        );
-      }
-    }
-
-    // Start a transaction
+    // Start transaction
     const transaction = await User.sequelize.transaction();
 
     try {
-      // Create the user
-      const newUser = await User.create({
+      // Create user
+      const user = await User.create({
         first_name,
         middle_name,
         sur_name,
         email,
         phone_number,
         gender,
-        password: userPassword,
-        status: 'active'
+        password: userPassword, // You should hash this in production
+        status,
+        address
       }, { transaction });
 
+      // Merge employee data from both naming conventions
+      const mergedBasicEmployeeData = { ...basic_employee_data, ...basicEmployeeData };
+      const mergedBioData = { ...bio_data, ...bioData };
+      const mergedPersonalEmployeeData = { ...personal_employee_data, ...personalEmployeeData };
+
+      // Auto-assign supervisor if department is provided
+      if (mergedBasicEmployeeData.department_id) {
+        try {
+          // First, try to find Department Head for the specific department
+          const departmentHead = await User.findOne({
+            include: [
+              {
+                model: Role,
+                as: 'roles',
+                where: {
+                  role_name: {
+                    [Op.in]: ['Department Head', 'department_head', 'Department Manager']
+                  }
+                }
+              },
+              {
+                model: BasicEmployeeData,
+                as: 'basicEmployeeData',
+                where: { department_id: mergedBasicEmployeeData.department_id }
+              }
+            ]
+          });
+
+          if (departmentHead) {
+            mergedBasicEmployeeData.supervisor_id = departmentHead.id;
+            logger.info(`Auto-assigned supervisor ${departmentHead.id} for user ${user.id}`);
+          } else {
+            // Fallback: Find any HR Manager as supervisor
+            const hrManager = await User.findOne({
+              include: [
+                {
+                  model: Role,
+                  as: 'roles',
+                  where: {
+                    role_name: {
+                      [Op.in]: ['HR Manager', 'hr_manager', 'Admin', 'admin']
+                    }
+                  }
+                }
+              ]
+            });
+
+            if (hrManager) {
+              mergedBasicEmployeeData.supervisor_id = hrManager.id;
+              logger.info(`Auto-assigned HR Manager ${hrManager.id} as supervisor for user ${user.id}`);
+            } else {
+              // No supervisor found, set to null
+              mergedBasicEmployeeData.supervisor_id = null;
+              logger.warn(`No supervisor found for user ${user.id} in department ${mergedBasicEmployeeData.department_id}`);
+            }
+          }
+        } catch (supervisorError) {
+          logger.error('Error finding supervisor:', supervisorError);
+          // Set supervisor_id to null if error occurs
+          mergedBasicEmployeeData.supervisor_id = null;
+        }
+      } else {
+        // No department specified, set supervisor to null
+        mergedBasicEmployeeData.supervisor_id = null;
+      }
+
       // Create basic employee data if provided
-      let employeeData = null;
-      if (Object.keys(basic_employee_data).length > 0) {
-        employeeData = await BasicEmployeeData.create({
-          user_id: newUser.id,
-          status: basic_employee_data.status || 'active',
-          registration_number: basic_employee_data.registration_number,
-          date_joined: basic_employee_data.date_joined || new Date(),
-          designation: basic_employee_data.designation || 'Employee',
-          employment_type: basic_employee_data.employment_type || 'full time',
-          department_id: basic_employee_data.department_id,
-          salary: basic_employee_data.salary,
-          supervisor_id: basic_employee_data.supervisor_id,
-          bank_name: basic_employee_data.bank_name,
-          account_number: basic_employee_data.account_number,
-          nida: basic_employee_data.nida,
-          bima: basic_employee_data.bima,
-          nssf: basic_employee_data.nssf,
-          helsb: basic_employee_data.helsb,
-          signature: basic_employee_data.signature
+      if (Object.keys(mergedBasicEmployeeData).length > 0) {
+        await BasicEmployeeData.create({
+          user_id: user.id,
+          ...mergedBasicEmployeeData
         }, { transaction });
       }
 
       // Create bio data if provided
-      if (Object.keys(bio_data).length > 0) {
+      if (Object.keys(mergedBioData).length > 0) {
         await BioData.create({
-          user_id: newUser.id,
-          fingerprint_id: bio_data.fingerprint_id,
-          signature: bio_data.signature,
-          marital_status: bio_data.marital_status || 'single',
-          national_id: bio_data.national_id,
-          dob: bio_data.dob,
-          blood_group: bio_data.blood_group
+          user_id: user.id,
+          ...mergedBioData
         }, { transaction });
       }
 
       // Create personal employee data if provided
-      if (Object.keys(personal_employee_data).length > 0) {
+      if (Object.keys(mergedPersonalEmployeeData).length > 0) {
         await PersonalEmployeeData.create({
-          user_id: newUser.id,
-          location: personal_employee_data.location,
-          education_level: personal_employee_data.education_level
+          user_id: user.id,
+          ...mergedPersonalEmployeeData
         }, { transaction });
       }
 
-      // Create emergency contacts if provided
-      for (const contact of emergency_contacts) {
+      // Handle emergency contacts (array format)
+      let contactsToCreate = [];
+      if (emergency_contacts && Array.isArray(emergency_contacts) && emergency_contacts.length > 0) {
+        contactsToCreate = emergency_contacts.filter(contact =>
+          contact.name && contact.phone_number
+        );
+      }
+      // Backward compatibility - single contact fields
+      else if (emergency_contact_name && emergency_contact_phone) {
+        contactsToCreate = [{
+          name: emergency_contact_name,
+          phone_number: emergency_contact_phone,
+          relationship: emergency_contact_relationship || 'Not specified'
+        }];
+      }
+
+      // Create emergency contacts
+      for (const contact of contactsToCreate) {
         await EmergencyContact.create({
-          user_id: newUser.id,
+          user_id: user.id,
           name: contact.name,
           phone_number: contact.phone_number,
-          relationship: contact.relationship
+          relationship: contact.relationship || 'Not specified'
         }, { transaction });
       }
 
-      // Create next of kin if provided
-      for (const kin of next_of_kin) {
+      // Handle next of kin (array format)
+      let kinToCreate = [];
+      if (next_of_kin && Array.isArray(next_of_kin) && next_of_kin.length > 0) {
+        kinToCreate = next_of_kin.filter(kin =>
+          kin.name && kin.phone_number
+        );
+      }
+      // Backward compatibility - single kin fields
+      else if (next_of_kin_name && next_of_kin_phone) {
+        kinToCreate = [{
+          name: next_of_kin_name,
+          phone_number: next_of_kin_phone,
+          relationship: next_of_kin_relationship || 'Not specified',
+          percentage: 100
+        }];
+      }
+
+      // Create next of kin
+      for (const kin of kinToCreate) {
         await NextOfKin.create({
-          user_id: newUser.id,
+          user_id: user.id,
           name: kin.name,
           phone_number: kin.phone_number,
-          percentage: kin.percentage,
-          relationship: kin.relationship
+          relationship: kin.relationship || 'Not specified',
+          percentage: kin.percentage || 0
         }, { transaction });
       }
 
-      // Assign roles
-      if (roles.length > 0) {
-        for (const roleId of roles) {
+      // Handle roles (support both roles and role_ids)
+      const roleIdsToAssign = roles.length > 0 ? roles : role_ids;
+      if (roleIdsToAssign && Array.isArray(roleIdsToAssign) && roleIdsToAssign.length > 0) {
+        for (const roleId of roleIdsToAssign) {
           await UserRole.create({
-            user_id: newUser.id,
+            user_id: user.id,
             role_id: roleId
           }, { transaction });
         }
       } else {
-        // Assign default employee role if no roles specified
-        const defaultRole = await Role.findOne({
-          where: {
-            role_name: 'Employee',
-            is_default: true
-          }
-        });
+        // Auto-assign default "Employee" role if no roles specified
+        try {
+          const defaultRole = await Role.findOne({
+            where: {
+              role_name: {
+                [Op.in]: ['Employee', 'employee']
+              }
+            }
+          });
 
-        if (defaultRole) {
-          await UserRole.create({
-            user_id: newUser.id,
-            role_id: defaultRole.id
-          }, { transaction });
+          if (defaultRole) {
+            await UserRole.create({
+              user_id: user.id,
+              role_id: defaultRole.id
+            }, { transaction });
+            logger.info(`Auto-assigned default Employee role to user ${user.id}`);
+          }
+        } catch (roleError) {
+          logger.error('Error assigning default role:', roleError);
         }
       }
 
       // Commit transaction
       await transaction.commit();
 
-      // Send welcome email if requested
-      // if (send_welcome_email) {
-      //   try {
-      //     await sendEmail({
-      //       to: email,
-      //       subject: 'Welcome to GHF HR System',
-      //       template: 'welcome-new-employee',
-      //       templateData: {
-      //         firstName: first_name,
-      //         fullName: `${first_name} ${sur_name}`,
-      //         email: email,
-      //         password: generate_random_password ? userPassword : '[Your provided password]',
-      //         temporaryPassword: generate_random_password,
-      //         registrationNumber: employeeData?.registration_number,
-      //         department: basic_employee_data.department_id ?
-      //           (await Department.findByPk(basic_employee_data.department_id))?.department_name :
-      //           'Not assigned',
-      //         designation: basic_employee_data.designation || 'Employee'
-      //       }
-      //     });
-      //   } catch (emailError) {
-      //     logger.warn('Failed to send welcome email:', emailError);
-      //     // Don't fail the user creation if email fails
-      //   }
-      // }
-
-      // Get created user with all related information
+      // Get created user with all related data
       const createdUser = await User.findOne({
-        where: { id: newUser.id },
+        where: { id: user.id },
         include: [
           {
             model: BasicEmployeeData,
@@ -758,7 +550,7 @@ const createUser = async (req, res, next) => {
               {
                 model: User,
                 as: 'supervisor',
-                attributes: ['id', 'first_name', 'middle_name', 'sur_name']
+                attributes: ['id', 'first_name', 'sur_name', 'email']
               }
             ]
           },
@@ -787,20 +579,21 @@ const createUser = async (req, res, next) => {
         ]
       });
 
-      // Prepare response (exclude sensitive data)
-      const responseData = {
-        ...createdUser.toJSON(),
-        ...(generate_random_password && { temporary_password: userPassword })
-      };
+      // Log successful creation with supervisor info
+      logger.info(`User created successfully: ${user.id}, Supervisor: ${mergedBasicEmployeeData.supervisor_id || 'None'}`);
 
       return successResponse(
         res,
         StatusCodes.CREATED,
         'User created successfully',
-        responseData
+        {
+          ...createdUser.toJSON(),
+          auto_assigned_supervisor: mergedBasicEmployeeData.supervisor_id ? true : false,
+          supervisor_id: mergedBasicEmployeeData.supervisor_id
+        }
       );
+
     } catch (error) {
-      // Rollback transaction in case of error
       await transaction.rollback();
       throw error;
     }
@@ -810,6 +603,263 @@ const createUser = async (req, res, next) => {
   }
 };
 
+/**
+ * Update user information
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const updateUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const {
+      first_name,
+      middle_name,
+      sur_name,
+      email,
+      phone_number,
+      gender,
+      status,
+      address,
+      basicEmployeeData,
+      basic_employee_data,
+      bioData,
+      bio_data,
+      personalEmployeeData,
+      personal_employee_data,
+      // Multiple contacts support
+      emergency_contacts,
+      next_of_kin,
+      // Backward compatibility - single contact fields
+      emergency_contact_name,
+      emergency_contact_phone,
+      emergency_contact_relationship,
+      next_of_kin_name,
+      next_of_kin_phone,
+      next_of_kin_relationship,
+      roles,
+      role_ids
+    } = req.body;
+
+    // Find the user
+    const user = await User.findByPk(id);
+
+    if (!user) {
+      return errorResponse(
+        res,
+        StatusCodes.NOT_FOUND,
+        'User not found'
+      );
+    }
+
+    // Start a transaction
+    const transaction = await User.sequelize.transaction();
+
+    try {
+      // Update user base information
+      await user.update({
+        first_name: first_name || user.first_name,
+        middle_name,
+        sur_name: sur_name || user.sur_name,
+        email: email || user.email,
+        phone_number,
+        gender: gender || user.gender,
+        status: status || user.status,
+        address
+      }, { transaction });
+
+      // Merge employee data from both naming conventions
+      const mergedBasicEmployeeData = { ...basic_employee_data, ...basicEmployeeData };
+      const mergedBioData = { ...bio_data, ...bioData };
+      const mergedPersonalEmployeeData = { ...personal_employee_data, ...personalEmployeeData };
+
+      // Update/create basic employee data if provided
+      if (Object.keys(mergedBasicEmployeeData).length > 0) {
+        await BasicEmployeeData.upsert({
+          user_id: id,
+          ...mergedBasicEmployeeData
+        }, { transaction });
+      }
+
+      // Update/create bio data if provided
+      if (Object.keys(mergedBioData).length > 0) {
+        await BioData.upsert({
+          user_id: id,
+          ...mergedBioData
+        }, { transaction });
+      }
+
+      // Update/create personal employee data if provided
+      if (Object.keys(mergedPersonalEmployeeData).length > 0) {
+        await PersonalEmployeeData.upsert({
+          user_id: id,
+          ...mergedPersonalEmployeeData
+        }, { transaction });
+      }
+
+      // Handle emergency contacts update
+      let shouldUpdateContacts = false;
+      let contactsToCreate = [];
+
+      // Check for array format
+      if (emergency_contacts && Array.isArray(emergency_contacts)) {
+        shouldUpdateContacts = true;
+        contactsToCreate = emergency_contacts.filter(contact =>
+          contact.name && contact.phone_number
+        );
+      }
+      // Check for backward compatibility format
+      else if (emergency_contact_name !== undefined || emergency_contact_phone !== undefined || emergency_contact_relationship !== undefined) {
+        shouldUpdateContacts = true;
+        if (emergency_contact_name && emergency_contact_phone) {
+          contactsToCreate = [{
+            name: emergency_contact_name,
+            phone_number: emergency_contact_phone,
+            relationship: emergency_contact_relationship || 'Not specified'
+          }];
+        }
+      }
+
+      if (shouldUpdateContacts) {
+        // Remove existing emergency contacts
+        await EmergencyContact.destroy({
+          where: { user_id: id },
+          transaction
+        });
+
+        // Create new emergency contacts
+        for (const contact of contactsToCreate) {
+          await EmergencyContact.create({
+            user_id: id,
+            name: contact.name,
+            phone_number: contact.phone_number,
+            relationship: contact.relationship || 'Not specified'
+          }, { transaction });
+        }
+      }
+
+      // Handle next of kin update
+      let shouldUpdateKin = false;
+      let kinToCreate = [];
+
+      // Check for array format
+      if (next_of_kin && Array.isArray(next_of_kin)) {
+        shouldUpdateKin = true;
+        kinToCreate = next_of_kin.filter(kin =>
+          kin.name && kin.phone_number
+        );
+      }
+      // Check for backward compatibility format
+      else if (next_of_kin_name !== undefined || next_of_kin_phone !== undefined || next_of_kin_relationship !== undefined) {
+        shouldUpdateKin = true;
+        if (next_of_kin_name && next_of_kin_phone) {
+          kinToCreate = [{
+            name: next_of_kin_name,
+            phone_number: next_of_kin_phone,
+            relationship: next_of_kin_relationship || 'Not specified',
+            percentage: 100
+          }];
+        }
+      }
+
+      if (shouldUpdateKin) {
+        // Remove existing next of kin
+        await NextOfKin.destroy({
+          where: { user_id: id },
+          transaction
+        });
+
+        // Create new next of kin
+        for (const kin of kinToCreate) {
+          await NextOfKin.create({
+            user_id: id,
+            name: kin.name,
+            phone_number: kin.phone_number,
+            relationship: kin.relationship || 'Not specified',
+            percentage: kin.percentage || 0
+          }, { transaction });
+        }
+      }
+
+      // Update roles if provided (support both roles and role_ids)
+      const roleIdsToAssign = roles && roles.length > 0 ? roles : role_ids;
+      if (roleIdsToAssign && Array.isArray(roleIdsToAssign)) {
+        // Delete current roles
+        await UserRole.destroy({
+          where: { user_id: id },
+          transaction
+        });
+
+        // Add new roles
+        for (const roleId of roleIdsToAssign) {
+          await UserRole.create({
+            user_id: id,
+            role_id: roleId
+          }, { transaction });
+        }
+      }
+
+      // Commit transaction
+      await transaction.commit();
+
+      // Get updated user with all related information
+      const updatedUser = await User.findOne({
+        where: { id },
+        include: [
+          {
+            model: BasicEmployeeData,
+            as: 'basicEmployeeData',
+            include: [
+              {
+                model: Department,
+                as: 'department',
+                attributes: ['id', 'department_name']
+              }
+            ]
+          },
+          {
+            model: BioData,
+            as: 'bioData'
+          },
+          {
+            model: PersonalEmployeeData,
+            as: 'personalEmployeeData'
+          },
+          {
+            model: EmergencyContact,
+            as: 'emergencyContacts'
+          },
+          {
+            model: NextOfKin,
+            as: 'nextOfKin'
+          },
+          {
+            model: Role,
+            as: 'roles',
+            through: { attributes: [] },
+            attributes: ['id', 'role_name']
+          }
+        ]
+      });
+
+      return successResponse(
+        res,
+        StatusCodes.OK,
+        'User updated successfully',
+        updatedUser
+      );
+    } catch (error) {
+      // Rollback transaction in case of error
+      await transaction.rollback();
+      throw error;
+    }
+  } catch (error) {
+    logger.error('Update user error:', error);
+    next(error);
+  }
+};
+
+// Updated updateEmployeePartial controller
 const updateEmployeePartial = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -870,8 +920,28 @@ const updateEmployeePartial = async (req, res, next) => {
         }, { transaction });
       }
 
-      // Update emergency contacts if provided
-      if (updateData.emergency_contact_name || updateData.emergency_contact_phone ||
+      // Handle emergency contacts (array format) if provided
+      if (updateData.emergency_contacts && Array.isArray(updateData.emergency_contacts)) {
+        // Remove existing emergency contacts
+        await EmergencyContact.destroy({
+          where: { user_id: id },
+          transaction
+        });
+
+        // Add new emergency contacts
+        for (const contact of updateData.emergency_contacts) {
+          if (contact.name && contact.phone_number) {
+            await EmergencyContact.create({
+              user_id: id,
+              name: contact.name,
+              phone_number: contact.phone_number,
+              relationship: contact.relationship || 'Not specified',
+            }, { transaction });
+          }
+        }
+      }
+      // Handle backward compatibility for single emergency contact
+      else if (updateData.emergency_contact_name || updateData.emergency_contact_phone ||
         updateData.emergency_contact_relationship) {
         // Remove existing emergency contacts
         await EmergencyContact.destroy({
@@ -890,8 +960,29 @@ const updateEmployeePartial = async (req, res, next) => {
         }
       }
 
-      // Update next of kin if provided
-      if (updateData.next_of_kin_name || updateData.next_of_kin_phone ||
+      // Handle next of kin (array format) if provided
+      if (updateData.next_of_kin && Array.isArray(updateData.next_of_kin)) {
+        // Remove existing next of kin
+        await NextOfKin.destroy({
+          where: { user_id: id },
+          transaction
+        });
+
+        // Add new next of kin
+        for (const kin of updateData.next_of_kin) {
+          if (kin.name && kin.phone_number) {
+            await NextOfKin.create({
+              user_id: id,
+              name: kin.name,
+              phone_number: kin.phone_number,
+              relationship: kin.relationship || 'Not specified',
+              percentage: kin.percentage || 0,
+            }, { transaction });
+          }
+        }
+      }
+      // Handle backward compatibility for single next of kin
+      else if (updateData.next_of_kin_name || updateData.next_of_kin_phone ||
         updateData.next_of_kin_relationship) {
         // Remove existing next of kin
         await NextOfKin.destroy({
