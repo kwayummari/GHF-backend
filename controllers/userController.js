@@ -196,11 +196,20 @@ const getUserById = async (req, res, next) => {
           model: PersonalEmployeeData,
           as: 'personalEmployeeData'
         },
+        // ADD THESE MISSING INCLUDES
+        {
+          model: EmergencyContact,
+          as: 'emergencyContacts'
+        },
+        {
+          model: NextOfKin,
+          as: 'nextOfKin'
+        },
         {
           model: Role,
           as: 'roles',
           through: { attributes: [] },
-          attributes: ['id', 'role_name']
+          attributes: ['id', 'role_name', 'description']
         }
       ]
     });
@@ -216,10 +225,11 @@ const getUserById = async (req, res, next) => {
     // Format user data
     const userData = user.toJSON();
 
-    // Format roles
+    // FIX: Format roles correctly (use role_name, not name)
     userData.roles = userData.roles.map(role => ({
       id: role.id,
-      name: role.role_name
+      role_name: role.role_name, // Keep consistent with your frontend
+      description: role.description
     }));
 
     return successResponse(
