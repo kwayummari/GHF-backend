@@ -882,6 +882,722 @@ const deleteHoliday = async (req, res, next) => {
   }
 };
 
+/**
+ * Submit monthly timesheet for approval (bulk update attendance records)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const submitMonthlyTimesheet = async (req, res, next) => {
+  try {
+    const { month, year, user_id } = req.body;
+    const requestingUserId = req.user.id;
+    const targetUserId = user_id || requestingUserId;
+
+    // Check permissions
+    if (targetUserId !== requestingUserId) {
+      const userRoles = req.user.roles || [];
+      const isAdmin = userRoles.includes('Admin');
+      const isHR = userRoles.includes('HR Manager');
+
+      if (!isAdmin && !isHR) {
+        return errorResponse(
+          res,
+          StatusCodes.FORBIDDEN,
+          'You can only submit your own timesheets'
+        );
+      }
+    }
+
+    // Build date range
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(month), 0);
+
+    // Get all attendance records for the month
+    const attendanceRecords = await Attendance.findAll({
+      where: {
+        user_id: targetUserId,
+        date: {
+          [Op.between]: [
+            startDate.toISOString().split('T')[0],
+            endDate.toISOString().split('T')[0]
+          ]
+        }
+      }
+    });
+
+    if (attendanceRecords.length === 0) {
+      return errorResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        'No attendance records found for the specified month'
+      );
+    }
+
+    // Check if all records have activity and description
+    const incompleteRecords = attendanceRecords.filter(record =>
+      !record.activity || record.activity.trim() === '' ||
+      !record.description || record.description.trim() === ''
+    );
+
+    if (incompleteRecords.length > 0) {
+      return errorResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        'Please complete all activity and description fields before submitting',
+        incompleteRecords.map(record => ({
+          date: record.date,
+          missing: !record.activity ? 'activity' : 'description'
+        }))
+      );
+    }
+
+    // Check current approval status
+    const statusGroups = attendanceRecords.reduce((acc, record) => {
+      acc[record.approval_status] = (acc[record.approval_status] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Don't allow resubmission if already submitted (unless rejected)
+    if (statusGroups.submitted > 0) {
+      return errorResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        'Timesheet is already submitted and pending approval'
+      );
+    }
+
+    if (statusGroups.approved > 0) {
+      return errorResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        'Timesheet is already approved and cannot be resubmitted'
+      );
+    }
+
+    // Update all attendance records to 'submitted' status
+    // Include both 'draft' and 'rejected' records for resubmission
+    const [updatedCount] = await Attendance.update(
+      {
+        approval_status: 'submitted',
+        submitted_at: new Date(),
+        submitted_by: requestingUserId,
+        // Clear rejection data when resubmitting
+        rejected_at: null,
+        rejected_by: null,
+        rejection_reason: null
+      },
+      {
+        where: {
+          user_id: targetUserId,
+          date: {
+            [Op.between]: [
+              startDate.toISOString().split('T')[0],
+              endDate.toISOString().split('T')[0]
+            ]
+          },
+          approval_status: ['draft', 'rejected'] // ← Fixed: Allow both draft and rejected
+        }
+      }
+    );
+
+    // Determine if this is a resubmission
+    const isResubmission = statusGroups.rejected > 0;
+
+    return successResponse(
+      res,
+      StatusCodes.OK,
+      isResubmission
+        ? 'Monthly timesheet resubmitted for approval successfully'
+        : 'Monthly timesheet submitted for approval successfully',
+      {
+        month,
+        year,
+        user_id: targetUserId,
+        submitted_records: updatedCount,
+        total_records: attendanceRecords.length,
+        is_resubmission: isResubmission
+      }
+    );
+  } catch (error) {
+    logger.error('Submit monthly timesheet error:', error);
+    next(error);
+  }
+};
+
+/**
+ * Get team timesheets pending approval (for supervisors)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const getTeamTimesheetsForApproval = async (req, res, next) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      month,
+      year,
+      status = 'submitted',
+      department_id
+    } = req.query;
+
+    const requestingUserId = req.user.id;
+    const userRoles = req.user.roles || [];
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    // Check permissions
+    const isAdmin = userRoles.includes('Admin');
+    const isHR = userRoles.includes('HR Manager');
+    const isDepartmentHead = userRoles.includes('Department Head');
+
+    if (!isAdmin && !isHR && !isDepartmentHead) {
+      return errorResponse(
+        res,
+        StatusCodes.FORBIDDEN,
+        'You do not have permission to view team timesheets'
+      );
+    }
+
+    // Build where conditions
+    const whereConditions = {};
+
+    if (status) whereConditions.approval_status = status;
+
+    // Filter by month and year if provided
+    if (month && year) {
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0);
+
+      whereConditions.date = {
+        [Op.between]: [
+          startDate.toISOString().split('T')[0],
+          endDate.toISOString().split('T')[0]
+        ]
+      };
+    }
+
+    let userWhereConditions = {};
+
+    // If department head, only show timesheets from their department
+    if (isDepartmentHead && !isAdmin && !isHR) {
+      const userEmployee = await BasicEmployeeData.findOne({
+        where: { user_id: requestingUserId }
+      });
+
+      if (userEmployee) {
+        userWhereConditions = {
+          department_id: userEmployee.department_id
+        };
+      }
+    }
+
+    // If department_id is specified and user has permission
+    if (department_id && (isAdmin || isHR)) {
+      userWhereConditions.department_id = parseInt(department_id);
+    }
+
+    // Get attendance records with user and department info
+    const attendanceRecords = await Attendance.findAll({
+      where: whereConditions,
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'first_name', 'middle_name', 'sur_name', 'email'],
+          include: [
+            {
+              model: BasicEmployeeData,
+              as: 'basicEmployeeData',
+              where: userWhereConditions,
+              include: [
+                {
+                  model: Department,
+                  as: 'department',
+                  attributes: ['id', 'department_name']
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      order: [['submitted_at', 'DESC'], ['date', 'DESC']],
+      limit: parseInt(limit),
+      offset
+    });
+
+    // Group by user and month
+    const timesheetGroups = {};
+    attendanceRecords.forEach(record => {
+      const date = new Date(record.date);
+      const key = `${record.user_id}-${date.getFullYear()}-${date.getMonth() + 1}`;
+
+      if (!timesheetGroups[key]) {
+        timesheetGroups[key] = {
+          user: record.user,
+          month: date.getMonth() + 1,
+          year: date.getFullYear(),
+          entries: [],
+          summary: {
+            total_entries: 0,
+            present_days: 0,
+            total_hours: 0,
+            status: record.approval_status,
+            submitted_at: record.submitted_at
+          }
+        };
+      }
+
+      timesheetGroups[key].entries.push(record);
+      timesheetGroups[key].summary.total_entries++;
+
+      if (record.status === 'present') {
+        timesheetGroups[key].summary.present_days++;
+      }
+
+      // Calculate working hours
+      if (record.arrival_time && record.departure_time) {
+        const arrival = new Date(record.arrival_time);
+        const departure = new Date(record.departure_time);
+        const hours = (departure - arrival) / (1000 * 60 * 60);
+        timesheetGroups[key].summary.total_hours += Math.max(0, hours);
+      }
+    });
+
+    const timesheets = Object.values(timesheetGroups).map(timesheet => ({
+      ...timesheet,
+      summary: {
+        ...timesheet.summary,
+        total_hours: timesheet.summary.total_hours.toFixed(2)
+      }
+    }));
+
+    return paginatedResponse(
+      res,
+      StatusCodes.OK,
+      'Team timesheets retrieved successfully',
+      timesheets,
+      {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalItems: timesheets.length,
+        totalPages: Math.ceil(timesheets.length / parseInt(limit)),
+        hasNextPage: parseInt(page) < Math.ceil(timesheets.length / parseInt(limit)),
+        hasPrevPage: parseInt(page) > 1
+      }
+    );
+  } catch (error) {
+    logger.error('Get team timesheets for approval error:', error);
+    next(error);
+  }
+};
+
+/**
+ * Approve monthly timesheet (bulk approve attendance records)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const approveMonthlyTimesheet = async (req, res, next) => {
+  try {
+    const { user_id, month, year, supervisor_comments } = req.body;
+    const approverId = req.user.id;
+    const userRoles = req.user.roles || [];
+
+    // Check permissions
+    const isAdmin = userRoles.includes('Admin');
+    const isHR = userRoles.includes('HR Manager');
+    const isDepartmentHead = userRoles.includes('Department Head');
+
+    if (!isAdmin && !isHR && !isDepartmentHead) {
+      return errorResponse(
+        res,
+        StatusCodes.FORBIDDEN,
+        'You do not have permission to approve timesheets'
+      );
+    }
+
+    // If department head, verify they can approve this employee's timesheet
+    if (isDepartmentHead && !isAdmin && !isHR) {
+      const supervisorEmployee = await BasicEmployeeData.findOne({
+        where: { user_id: approverId }
+      });
+
+      const targetEmployee = await BasicEmployeeData.findOne({
+        where: { user_id: user_id }
+      });
+
+      if (!supervisorEmployee || !targetEmployee ||
+        supervisorEmployee.department_id !== targetEmployee.department_id) {
+        return errorResponse(
+          res,
+          StatusCodes.FORBIDDEN,
+          'You can only approve timesheets for employees in your department'
+        );
+      }
+    }
+
+    // Build date range
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(month), 0);
+
+    // Update all submitted attendance records to 'approved'
+    const [updatedCount] = await Attendance.update(
+      {
+        approval_status: 'approved',
+        approved_at: new Date(),
+        approved_by: approverId,
+        supervisor_comments: supervisor_comments || null
+      },
+      {
+        where: {
+          user_id: user_id,
+          date: {
+            [Op.between]: [
+              startDate.toISOString().split('T')[0],
+              endDate.toISOString().split('T')[0]
+            ]
+          },
+          approval_status: 'submitted'
+        }
+      }
+    );
+
+    if (updatedCount === 0) {
+      return errorResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        'No submitted attendance records found for approval'
+      );
+    }
+
+    // Get employee details for notification
+    const employee = await User.findOne({
+      where: { id: user_id },
+      attributes: ['id', 'first_name', 'middle_name', 'sur_name', 'email'],
+      include: [
+        {
+          model: BasicEmployeeData,
+          as: 'basicEmployeeData',
+          include: [
+            {
+              model: Department,
+              as: 'department',
+              attributes: ['id', 'department_name']
+            }
+          ]
+        }
+      ]
+    });
+
+    return successResponse(
+      res,
+      StatusCodes.OK,
+      'Monthly timesheet approved successfully',
+      {
+        user_id,
+        month,
+        year,
+        approved_records: updatedCount,
+        approved_by: approverId,
+        employee: {
+          name: `${employee.first_name} ${employee.middle_name || ''} ${employee.sur_name}`.trim(),
+          email: employee.email,
+          department: employee.basicEmployeeData?.department?.department_name
+        },
+        ready_for_payroll: true
+      }
+    );
+  } catch (error) {
+    logger.error('Approve monthly timesheet error:', error);
+    next(error);
+  }
+};
+
+/**
+ * Reject monthly timesheet (bulk reject attendance records) - DEBUG VERSION
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const rejectMonthlyTimesheet = async (req, res, next) => {
+  try {
+    const { user_id, month, year, rejection_reason, supervisor_comments } = req.body;
+    const rejectorId = req.user.id;
+    const userRoles = req.user.roles || [];
+
+    // Check permissions
+    const isAdmin = userRoles.includes('Admin');
+    const isHR = userRoles.includes('HR Manager');
+    const isDepartmentHead = userRoles.includes('Department Head');
+
+    if (!isAdmin && !isHR && !isDepartmentHead) {
+      return errorResponse(
+        res,
+        StatusCodes.FORBIDDEN,
+        'You do not have permission to reject timesheets'
+      );
+    }
+
+    if (!rejection_reason || rejection_reason.trim() === '') {
+      return errorResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        'Rejection reason is required'
+      );
+    }
+
+    // Build date range
+    const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+    const endDate = new Date(parseInt(year), parseInt(month), 0);
+
+    // First, let's check what records exist before update
+    const existingRecords = await Attendance.findAll({
+      where: {
+        user_id: user_id,
+        date: {
+          [Op.between]: [
+            startDate.toISOString().split('T')[0],
+            endDate.toISOString().split('T')[0]
+          ]
+        },
+        approval_status: 'submitted'
+      }
+    });
+
+    if (existingRecords.length === 0) {
+      return errorResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        'No submitted attendance records found for rejection'
+      );
+    }
+
+    // Prepare update data
+    const updateData = {
+      approval_status: 'rejected',
+      rejected_at: new Date(),
+      rejected_by: rejectorId,
+      rejection_reason,
+      supervisor_comments: supervisor_comments || null
+    };
+
+
+    // Update all submitted attendance records to 'rejected'
+    const [updatedCount] = await Attendance.update(
+      updateData,
+      {
+        where: {
+          user_id: user_id,
+          date: {
+            [Op.between]: [
+              startDate.toISOString().split('T')[0],
+              endDate.toISOString().split('T')[0]
+            ]
+          },
+          approval_status: 'submitted'
+        }
+      }
+    );
+
+    // Verify the update by checking the records again
+    const updatedRecords = await Attendance.findAll({
+      where: {
+        user_id: user_id,
+        date: {
+          [Op.between]: [
+            startDate.toISOString().split('T')[0],
+            endDate.toISOString().split('T')[0]
+          ]
+        },
+        approval_status: 'rejected'
+      }
+    });
+
+    if (updatedCount === 0) {
+      return errorResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        'No submitted attendance records found for rejection'
+      );
+    }
+
+    return successResponse(
+      res,
+      StatusCodes.OK,
+      'Monthly timesheet rejected successfully',
+      {
+        user_id,
+        month,
+        year,
+        rejected_records: updatedCount,
+        rejected_by: rejectorId,
+        rejection_reason,
+        debug_info: {
+          original_records: existingRecords.length,
+          updated_records: updatedRecords.length,
+          rejected_at: updateData.rejected_at
+        }
+      }
+    );
+  } catch (error) {
+    console.error('Reject monthly timesheet error:', error);
+    logger.error('Reject monthly timesheet error:', error);
+    next(error);
+  }
+};
+
+/**
+ * Get approved timesheets for payroll processing
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object  
+ * @param {Function} next - Express next function
+ */
+const getApprovedTimesheetsForPayroll = async (req, res, next) => {
+  try {
+    const {
+      month,
+      year,
+      department_id,
+      page = 1,
+      limit = 50
+    } = req.query;
+
+    const userRoles = req.user.roles || [];
+    const isAdmin = userRoles.includes('Admin');
+    const isHR = userRoles.includes('HR Manager');
+    const isPayroll = userRoles.includes('Payroll Manager');
+
+    if (!isAdmin && !isHR && !isPayroll) {
+      return errorResponse(
+        res,
+        StatusCodes.FORBIDDEN,
+        'You do not have permission to access payroll data'
+      );
+    }
+
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    // Build where conditions
+    const whereConditions = {
+      approval_status: 'approved'
+    };
+
+    // Filter by month and year if provided
+    if (month && year) {
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0);
+
+      whereConditions.date = {
+        [Op.between]: [
+          startDate.toISOString().split('T')[0],
+          endDate.toISOString().split('T')[0]
+        ]
+      };
+    }
+
+    let includeConditions = [
+      {
+        model: User,
+        as: 'user',
+        attributes: ['id', 'first_name', 'middle_name', 'sur_name', 'email'],
+        include: [
+          {
+            model: BasicEmployeeData,
+            as: 'basicEmployeeData',
+            include: [
+              {
+                model: Department,
+                as: 'department',
+                attributes: ['id', 'department_name']
+              }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // Filter by department if specified
+    if (department_id) {
+      includeConditions[0].include[0].where = {
+        department_id: parseInt(department_id)
+      };
+    }
+
+    // Get approved attendance records
+    const attendanceRecords = await Attendance.findAll({
+      where: whereConditions,
+      include: includeConditions,
+      order: [['approved_at', 'DESC'], ['date', 'ASC']],
+      limit: parseInt(limit),
+      offset
+    });
+
+    // Group by user and month for payroll processing
+    const payrollData = {};
+    attendanceRecords.forEach(record => {
+      const date = new Date(record.date);
+      const key = `${record.user_id}-${date.getFullYear()}-${date.getMonth() + 1}`;
+
+      if (!payrollData[key]) {
+        payrollData[key] = {
+          user: record.user,
+          month: date.getMonth() + 1,
+          year: date.getFullYear(),
+          total_working_days: 0,
+          total_hours: 0,
+          present_days: 0,
+          half_days: 0,
+          approved_at: record.approved_at,
+          approved_by: record.approved_by,
+          entries: []
+        };
+      }
+
+      payrollData[key].entries.push(record);
+      payrollData[key].total_working_days++;
+
+      if (record.status === 'present') {
+        payrollData[key].present_days++;
+      } else if (record.status === 'half day') {
+        payrollData[key].half_days++;
+      }
+
+      // Calculate working hours
+      if (record.arrival_time && record.departure_time) {
+        const arrival = new Date(record.arrival_time);
+        const departure = new Date(record.departure_time);
+        const hours = (departure - arrival) / (1000 * 60 * 60);
+        payrollData[key].total_hours += Math.max(0, hours);
+      }
+    });
+
+    const payrollTimesheets = Object.values(payrollData).map(timesheet => ({
+      ...timesheet,
+      total_hours: parseFloat(timesheet.total_hours.toFixed(2))
+    }));
+
+    return paginatedResponse(
+      res,
+      StatusCodes.OK,
+      'Approved timesheets for payroll retrieved successfully',
+      payrollTimesheets,
+      {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalItems: payrollTimesheets.length,
+        totalPages: Math.ceil(payrollTimesheets.length / parseInt(limit)),
+        hasNextPage: parseInt(page) < Math.ceil(payrollTimesheets.length / parseInt(limit)),
+        hasPrevPage: parseInt(page) > 1
+      }
+    );
+  } catch (error) {
+    logger.error('Get approved timesheets for payroll error:', error);
+    next(error);
+  }
+};
+
+
 module.exports = {
   clockIn,
   clockOut,
@@ -894,5 +1610,11 @@ module.exports = {
   getHolidays,
   createHoliday,
   updateHoliday,
-  deleteHoliday
+  deleteHoliday,
+  submitMonthlyTimesheet,
+  getTeamTimesheetsForApproval,
+  approveMonthlyTimesheet,
+  rejectMonthlyTimesheet,
+  getApprovedTimesheetsForPayroll
+
 };

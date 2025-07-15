@@ -1,5 +1,5 @@
 const { StatusCodes } = require('http-status-codes');
-const { Op } = require('sequelize'); // Import Op directly from sequelize
+const { Op } = require('sequelize');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const UserRole = require('../models/UserRole');
@@ -13,6 +13,7 @@ const { sendEmail } = require('../services/mailer');
 const logger = require('../utils/logger');
 const crypto = require('crypto');
 const config = require('../config/config');
+const { logAuthEvent } = require('../middlewares/authEventLogger');
 
 /**
  * Register a new user
@@ -161,6 +162,10 @@ const login = async (req, res, next) => {
     const isPasswordValid = await comparePassword(password, user.password);
     
     if (!isPasswordValid) {
+      await logAuthEvent(req, { email: req.body.email }, 'failed_login', 'failed', {
+        reason: 'Invalid credentials',
+        attempted_email: req.body.email
+      });
       return errorResponse(
         res,
         StatusCodes.UNAUTHORIZED,
@@ -193,6 +198,12 @@ const login = async (req, res, next) => {
     });
     
     const refreshToken = generateRefreshToken({ id: user.id });
+
+    await logAuthEvent(req, user, 'login', 'success', {
+      login_method: 'password',
+      user_agent: req.get('User-Agent')
+    });
+
     
     return successResponse(
       res,

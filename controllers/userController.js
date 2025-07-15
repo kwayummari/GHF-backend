@@ -6,6 +6,10 @@ const PersonalEmployeeData = require('../models/PersonalEmployeeData');
 const Department = require('../models/Department');
 const Role = require('../models/Role');
 const UserRole = require('../models/UserRole');
+// ADD THESE MISSING IMPORTS
+const EmergencyContact = require('../models/EmergencyContact');
+const NextOfKin = require('../models/NextOfKin');
+const crypto = require('crypto'); // Also needed for password generation
 const { successResponse, errorResponse, paginatedResponse } = require('../utils/responseUtils');
 const { formatDate } = require('../utils/dateUtils');
 const logger = require('../utils/logger');
@@ -19,22 +23,22 @@ const { Op } = require('sequelize');
  */
 const getAllUsers = async (req, res, next) => {
   try {
-    const { 
-      page = 1, 
-      limit = 10, 
-      search = '', 
-      status = '', 
-      gender = '', 
+    const {
+      page = 1,
+      limit = 10,
+      search = '',
+      status = '',
+      gender = '',
       department = '',
-      sortBy = 'created_at', 
-      sortOrder = 'DESC' 
+      sortBy = 'created_at',
+      sortOrder = 'DESC'
     } = req.query;
-    
+
     const offset = (parseInt(page) - 1) * parseInt(limit);
-    
+
     // Build where conditions
     const whereConditions = {};
-    
+
     if (search) {
       whereConditions[Op.or] = [
         { first_name: { [Op.like]: `%${search}%` } },
@@ -43,15 +47,15 @@ const getAllUsers = async (req, res, next) => {
         { phone_number: { [Op.like]: `%${search}%` } }
       ];
     }
-    
+
     if (status) {
       whereConditions.status = status;
     }
-    
+
     if (gender) {
       whereConditions.gender = gender;
     }
-    
+
     // Build association options for department filter
     const includeOptions = [
       {
@@ -61,7 +65,7 @@ const getAllUsers = async (req, res, next) => {
         attributes: ['id', 'role_name']
       }
     ];
-    
+
     if (department) {
       includeOptions.push({
         model: BasicEmployeeData,
@@ -89,7 +93,7 @@ const getAllUsers = async (req, res, next) => {
         ]
       });
     }
-    
+
     // Execute query
     const { count, rows } = await User.findAndCountAll({
       where: whereConditions,
@@ -99,11 +103,11 @@ const getAllUsers = async (req, res, next) => {
       offset,
       distinct: true
     });
-    
+
     // Format user data
     const users = rows.map(user => {
       const userData = user.toJSON();
-      
+
       // Format department data
       if (userData.basicEmployeeData && userData.basicEmployeeData.department) {
         userData.department = userData.basicEmployeeData.department.department_name;
@@ -112,27 +116,27 @@ const getAllUsers = async (req, res, next) => {
         userData.department = null;
         userData.department_id = null;
       }
-      
+
       // Format roles
       userData.roleNames = userData.roles.map(role => role.role_name);
-      
+
       // Extract essential fields from basicEmployeeData
       if (userData.basicEmployeeData) {
         userData.designation = userData.basicEmployeeData.designation;
         userData.employment_type = userData.basicEmployeeData.employment_type;
         userData.date_joined = userData.basicEmployeeData.date_joined;
       }
-      
+
       // Remove nested objects to make response cleaner
       delete userData.basicEmployeeData;
-      
+
       return userData;
     });
-    
+
     // Calculate pagination info
     const totalPages = Math.ceil(count / parseInt(limit));
     const currentPage = parseInt(page);
-    
+
     return paginatedResponse(
       res,
       StatusCodes.OK,
@@ -162,7 +166,7 @@ const getAllUsers = async (req, res, next) => {
 const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
+
     // Find user with all related information
     const user = await User.findOne({
       where: { id },
@@ -199,7 +203,7 @@ const getUserById = async (req, res, next) => {
         }
       ]
     });
-    
+
     if (!user) {
       return errorResponse(
         res,
@@ -207,16 +211,16 @@ const getUserById = async (req, res, next) => {
         'User not found'
       );
     }
-    
+
     // Format user data
     const userData = user.toJSON();
-    
+
     // Format roles
     userData.roles = userData.roles.map(role => ({
       id: role.id,
       name: role.role_name
     }));
-    
+
     return successResponse(
       res,
       StatusCodes.OK,
@@ -238,23 +242,23 @@ const getUserById = async (req, res, next) => {
 const updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { 
-      first_name, 
-      middle_name, 
-      sur_name, 
-      email, 
-      phone_number, 
-      gender, 
+    const {
+      first_name,
+      middle_name,
+      sur_name,
+      email,
+      phone_number,
+      gender,
       status,
       basicEmployeeData,
       bioData,
       personalEmployeeData,
       roles
     } = req.body;
-    
+
     // Find the user
     const user = await User.findByPk(id);
-    
+
     if (!user) {
       return errorResponse(
         res,
@@ -262,10 +266,10 @@ const updateUser = async (req, res, next) => {
         'User not found'
       );
     }
-    
+
     // Start a transaction
     const transaction = await User.sequelize.transaction();
-    
+
     try {
       // Update user base information
       await user.update({
@@ -277,14 +281,14 @@ const updateUser = async (req, res, next) => {
         gender: gender || user.gender,
         status: status || user.status
       }, { transaction });
-      
+
       // Update/create basic employee data if provided
       if (basicEmployeeData) {
-        let employeeData = await BasicEmployeeData.findOne({ 
+        let employeeData = await BasicEmployeeData.findOne({
           where: { user_id: id },
           transaction
         });
-        
+
         if (employeeData) {
           await employeeData.update(basicEmployeeData, { transaction });
         } else {
@@ -294,14 +298,14 @@ const updateUser = async (req, res, next) => {
           }, { transaction });
         }
       }
-      
+
       // Update/create bio data if provided
       if (bioData) {
-        let existingBioData = await BioData.findOne({ 
+        let existingBioData = await BioData.findOne({
           where: { user_id: id },
           transaction
         });
-        
+
         if (existingBioData) {
           await existingBioData.update(bioData, { transaction });
         } else {
@@ -311,14 +315,14 @@ const updateUser = async (req, res, next) => {
           }, { transaction });
         }
       }
-      
+
       // Update/create personal employee data if provided
       if (personalEmployeeData) {
-        let personalData = await PersonalEmployeeData.findOne({ 
+        let personalData = await PersonalEmployeeData.findOne({
           where: { user_id: id },
           transaction
         });
-        
+
         if (personalData) {
           await personalData.update(personalEmployeeData, { transaction });
         } else {
@@ -328,7 +332,7 @@ const updateUser = async (req, res, next) => {
           }, { transaction });
         }
       }
-      
+
       // Update roles if provided
       if (roles && Array.isArray(roles)) {
         // Delete current roles
@@ -336,7 +340,7 @@ const updateUser = async (req, res, next) => {
           where: { user_id: id },
           transaction
         });
-        
+
         // Add new roles
         for (const roleId of roles) {
           await UserRole.create({
@@ -345,10 +349,10 @@ const updateUser = async (req, res, next) => {
           }, { transaction });
         }
       }
-      
+
       // Commit transaction
       await transaction.commit();
-      
+
       // Get updated user with all related information
       const updatedUser = await User.findOne({
         where: { id },
@@ -380,7 +384,7 @@ const updateUser = async (req, res, next) => {
           }
         ]
       });
-      
+
       return successResponse(
         res,
         StatusCodes.OK,
@@ -407,10 +411,10 @@ const updateUser = async (req, res, next) => {
 const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
-    
+
     // Find the user
     const user = await User.findByPk(id);
-    
+
     if (!user) {
       return errorResponse(
         res,
@@ -418,10 +422,10 @@ const deleteUser = async (req, res, next) => {
         'User not found'
       );
     }
-    
+
     // We don't actually delete the user, we just set status to inactive
     await user.update({ status: 'inactive' });
-    
+
     return successResponse(
       res,
       StatusCodes.OK,
@@ -484,7 +488,7 @@ const createUser = async (req, res, next) => {
     }
 
     // Generate random password if requested
-    let userPassword = first_name + "@2025";
+    let userPassword = password || first_name + "@2025";
     if (generate_random_password) {
       userPassword = crypto.randomBytes(8).toString('hex').toUpperCase();
     }
@@ -709,7 +713,7 @@ const createUser = async (req, res, next) => {
       }
 
       // Commit transaction
-      // await transaction.commit();
+      await transaction.commit();
 
       // Send welcome email if requested
       // if (send_welcome_email) {
@@ -805,11 +809,188 @@ const createUser = async (req, res, next) => {
   }
 };
 
-// Update the module.exports to include createUser
+const updateEmployeePartial = async (req, res) => {
+  const { id } = req.params;
+  const updateData = req.body;
+
+  try {
+    // Validate employee exists
+    const employee = await Employee.findByPk(id);
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: "Employee not found",
+      });
+    }
+
+    // Handle different types of partial updates based on the data structure
+    const transaction = await sequelize.transaction();
+
+    try {
+      // Update basic employee info if provided
+      if (updateData.first_name || updateData.middle_name || updateData.sur_name ||
+        updateData.email || updateData.phone_number || updateData.gender ||
+        updateData.status || updateData.address) {
+        await employee.update({
+          first_name: updateData.first_name || employee.first_name,
+          middle_name: updateData.middle_name || employee.middle_name,
+          sur_name: updateData.sur_name || employee.sur_name,
+          email: updateData.email || employee.email,
+          phone_number: updateData.phone_number || employee.phone_number,
+          gender: updateData.gender || employee.gender,
+          status: updateData.status || employee.status,
+          address: updateData.address || employee.address,
+        }, { transaction });
+      }
+
+      // Update bio data if provided
+      if (updateData.bioData) {
+        let bioData = await BioData.findOne({ where: { employee_id: id } });
+        if (bioData) {
+          await bioData.update(updateData.bioData, { transaction });
+        } else {
+          await BioData.create({
+            employee_id: id,
+            ...updateData.bioData,
+          }, { transaction });
+        }
+      }
+
+      // Update personal employee data if provided
+      if (updateData.personalEmployeeData) {
+        let personalData = await PersonalEmployeeData.findOne({ where: { employee_id: id } });
+        if (personalData) {
+          await personalData.update(updateData.personalEmployeeData, { transaction });
+        } else {
+          await PersonalEmployeeData.create({
+            employee_id: id,
+            ...updateData.personalEmployeeData,
+          }, { transaction });
+        }
+      }
+
+      // Update basic employee data (employment info) if provided
+      if (updateData.basicEmployeeData) {
+        let basicData = await BasicEmployeeData.findOne({ where: { employee_id: id } });
+        if (basicData) {
+          await basicData.update(updateData.basicEmployeeData, { transaction });
+        } else {
+          await BasicEmployeeData.create({
+            employee_id: id,
+            ...updateData.basicEmployeeData,
+          }, { transaction });
+        }
+      }
+
+      // Update emergency contacts if provided
+      if (updateData.emergency_contact_name || updateData.emergency_contact_phone ||
+        updateData.emergency_contact_relationship) {
+        // Remove existing emergency contacts
+        await EmergencyContact.destroy({ where: { employee_id: id }, transaction });
+
+        // Add new emergency contact
+        if (updateData.emergency_contact_name && updateData.emergency_contact_phone) {
+          await EmergencyContact.create({
+            employee_id: id,
+            name: updateData.emergency_contact_name,
+            phone_number: updateData.emergency_contact_phone,
+            relationship: updateData.emergency_contact_relationship,
+          }, { transaction });
+        }
+      }
+
+      // Update next of kin if provided
+      if (updateData.next_of_kin_name || updateData.next_of_kin_phone ||
+        updateData.next_of_kin_relationship) {
+        // Remove existing next of kin
+        await NextOfKin.destroy({ where: { employee_id: id }, transaction });
+
+        // Add new next of kin
+        if (updateData.next_of_kin_name && updateData.next_of_kin_phone) {
+          await NextOfKin.create({
+            employee_id: id,
+            name: updateData.next_of_kin_name,
+            phone_number: updateData.next_of_kin_phone,
+            relationship: updateData.next_of_kin_relationship,
+            percentage: 100,
+          }, { transaction });
+        }
+      }
+      // Update roles if provided
+      if (updateData.role_ids && Array.isArray(updateData.role_ids)) {
+        // Remove existing role assignments
+        await UserRole.destroy({ where: { user_id: id }, transaction });
+
+        // Add new role assignments
+        const roleAssignments = updateData.role_ids.map(roleId => ({
+          user_id: id,
+          role_id: roleId,
+        }));
+
+        if (roleAssignments.length > 0) {
+          await UserRole.bulkCreate(roleAssignments, { transaction });
+        }
+      }
+
+      await transaction.commit();
+
+      // Fetch updated employee data
+      const updatedEmployee = await Employee.findByPk(id, {
+        include: [
+          {
+            model: BioData,
+            as: 'bioData',
+          },
+          {
+            model: PersonalEmployeeData,
+            as: 'personalEmployeeData',
+          },
+          {
+            model: BasicEmployeeData,
+            as: 'basicEmployeeData',
+          },
+          {
+            model: EmergencyContact,
+            as: 'emergencyContacts',
+          },
+          {
+            model: NextOfKin,
+            as: 'nextOfKin',
+          },
+          {
+            model: Role,
+            as: 'roles',
+            through: { attributes: [] },
+          },
+        ],
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Employee data updated successfully",
+        data: updatedEmployee,
+      });
+
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+
+  } catch (error) {
+    console.error("Error updating employee partial data:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update employee data",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createUser,
   getAllUsers,
   getUserById,
   updateUser,
-  deleteUser
+  deleteUser,
+  updateEmployeePartial
 };

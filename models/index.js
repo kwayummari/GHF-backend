@@ -38,6 +38,9 @@ const PettyCashExpense = require('./PettyCashExpense');
 const ReplenishmentRequest = require('./ReplenishmentRequest');
 const MeetingRecord = require('./MeetingRecord');
 const MeetingTask = require('./MeetingTask');
+const Meeting = require('./Meeting');
+const MeetingAttendee = require('./MeetingAtendee');
+const MeetingDocument = require('./MeetingDocument');
 const Notification = require('./Notification');
 const Objective = require('./Objective');
 const AppraisalForm = require('./AppraisalForm');
@@ -47,6 +50,7 @@ const SalaryComponent = require('./SalaryComponent');
 const Menu = require('./Menu');
 const MenuPermission = require('./MenuPermission');
 const RoleMenuAccess = require('./RoleMenuAccess');
+const ActivityLog = require('./ActivityLog');
 // const Timesheet = require('./Timesheet');
 // const TimesheetEntry = require('./TimesheetEntry');
 
@@ -87,6 +91,9 @@ const models = {
   ReplenishmentRequest,
   MeetingRecord,
   MeetingTask,
+  Meeting,
+  MeetingAttendee,
+  MeetingDocument,
   Notification,
   Objective,
   AppraisalForm,
@@ -96,6 +103,7 @@ const models = {
   Menu,
   MenuPermission,
   RoleMenuAccess,
+  ActivityLog,
   // Timesheet,
   // TimesheetEntry,
 };

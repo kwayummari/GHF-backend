@@ -79,6 +79,12 @@ const router = express.Router();
  */
 router.get('/', authenticate, authorize(['Admin', 'HR Manager']), userController.getAllUsers);
 
+router.patch('/:id/partial', 
+  authenticate, 
+  authorize(['admin', 'hr_manager']), 
+    userController.updateEmployeePartial
+);
+
 /**
  * @swagger
  * /api/v1/users/{id}:

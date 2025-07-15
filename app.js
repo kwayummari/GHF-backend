@@ -15,6 +15,7 @@ const errorHandler = require('./middlewares/errorHandler');
 const rateLimiter = require('./middlewares/rateLimiter');
 const routes = require('./routes');
 const { authenticateAndAuthorize } = require('./middlewares/combinedAuthMiddleware');
+const { globalActivityLogger } = require('./middlewares/globalActivityLogger');
 
 // Initialize Express app
 const app = express();
@@ -40,6 +41,8 @@ passportConfig(passport);
 
 // API Documentation
 swaggerConfig(app);
+
+app.use(`/api/${config.API_VERSION}`, globalActivityLogger());
 
 // Apply automatic authentication and authorization to all API routes
 app.use('/api', authenticateAndAuthorize);

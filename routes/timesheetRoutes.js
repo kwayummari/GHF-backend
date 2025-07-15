@@ -212,4 +212,202 @@ router.put('/update', authenticate, timesheetController.updateTimesheet);
  */
 router.put('/submit', authenticate, timesheetController.submitTimesheet);
 
+/**
+ * @swagger
+ * /api/v1/timesheets:
+ *   post:
+ *     summary: Create a new timesheet
+ *     tags: [Timesheets]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - month
+ *               - year
+ *               - timesheet_entries
+ *             properties:
+ *               month:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 12
+ *               year:
+ *                 type: integer
+ *               user_id:
+ *                 type: integer
+ *                 description: User ID (optional, defaults to current user)
+ *               status:
+ *                 type: string
+ *                 enum: [draft, submitted, approved, rejected, processing]
+ *                 default: draft
+ *               timesheet_entries:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - date
+ *                     - activity
+ *                     - description
+ *                   properties:
+ *                     attendance_id:
+ *                       type: integer
+ *                     date:
+ *                       type: string
+ *                       format: date
+ *                     arrival_time:
+ *                       type: string
+ *                       format: time
+ *                     departure_time:
+ *                       type: string
+ *                       format: time
+ *                     working_hours:
+ *                       type: number
+ *                       format: decimal
+ *                     activity:
+ *                       type: string
+ *                       maxLength: 100
+ *                     description:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                       enum: [present, absent, on leave, half day, holiday, weekend]
+ *                     scheduler_status:
+ *                       type: string
+ *                       enum: [working day, weekend, holiday in working day, holiday in weekend]
+ *                     is_billable:
+ *                       type: boolean
+ *                       default: true
+ *                     project_code:
+ *                       type: string
+ *                       maxLength: 50
+ *                     task_category:
+ *                       type: string
+ *                       maxLength: 50
+ *     responses:
+ *       201:
+ *         description: Timesheet created successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       409:
+ *         description: Timesheet already exists for this month and year
+ */
+router.post('/', authenticate, timesheetController.createTimesheet);
+
+/**
+ * @swagger
+ * /api/v1/timesheets/{id}:
+ *   get:
+ *     summary: Get timesheet by ID
+ *     tags: [Timesheets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Timesheet ID
+ *     responses:
+ *       200:
+ *         description: Timesheet retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Timesheet not found
+ */
+router.get('/:id', authenticate, timesheetController.getTimesheetById);
+
+/**
+ * @swagger
+ * /api/v1/timesheets/{id}:
+ *   put:
+ *     summary: Update timesheet by ID
+ *     tags: [Timesheets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Timesheet ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [draft, submitted, approved, rejected, processing]
+ *               supervisor_comments:
+ *                 type: string
+ *               timesheet_entries:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: Entry ID (for existing entries)
+ *                     attendance_id:
+ *                       type: integer
+ *                     date:
+ *                       type: string
+ *                       format: date
+ *                     arrival_time:
+ *                       type: string
+ *                       format: time
+ *                     departure_time:
+ *                       type: string
+ *                       format: time
+ *                     working_hours:
+ *                       type: number
+ *                       format: decimal
+ *                     activity:
+ *                       type: string
+ *                       maxLength: 100
+ *                     description:
+ *                       type: string
+ *                     status:
+ *                       type: string
+ *                       enum: [present, absent, on leave, half day, holiday, weekend]
+ *                     scheduler_status:
+ *                       type: string
+ *                       enum: [working day, weekend, holiday in working day, holiday in weekend]
+ *                     is_billable:
+ *                       type: boolean
+ *                     project_code:
+ *                       type: string
+ *                       maxLength: 50
+ *                     task_category:
+ *                       type: string
+ *                       maxLength: 50
+ *     responses:
+ *       200:
+ *         description: Timesheet updated successfully
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Timesheet not found
+ */
+router.put('/:id', authenticate, timesheetController.updateTimesheetById);
+
 module.exports = router;

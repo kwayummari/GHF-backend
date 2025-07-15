@@ -1,5 +1,6 @@
 const { StatusCodes } = require('http-status-codes');
 const { Op, Sequelize } = require('sequelize');
+
 const Attendance = require('../models/Attendance');
 const User = require('../models/User');
 const BasicEmployeeData = require('../models/BasicEmployeeData');
@@ -551,10 +552,445 @@ const getMyTimesheets = async (req, res, next) => {
     }
 };
 
+/**
+ * Create a new timesheet
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const createTimesheet = async (req, res, next) => {
+    const transaction = await sequelize.transaction();
+
+    try {
+        const {
+            month,
+            year,
+            user_id,
+            status = 'draft',
+            timesheet_entries = []
+        } = req.body;
+
+        const requestingUserId = req.user.id;
+        const userRoles = req.user.roles || [];
+        const targetUserId = user_id || requestingUserId;
+
+        // Check permissions
+        if (targetUserId !== requestingUserId) {
+            const isAdmin = userRoles.includes('Admin');
+            const isHR = userRoles.includes('HR Manager');
+
+            if (!isAdmin && !isHR) {
+                await transaction.rollback();
+                return errorResponse(
+                    res,
+                    StatusCodes.FORBIDDEN,
+                    'You can only create timesheets for yourself'
+                );
+            }
+        }
+
+        // Validate required fields
+        if (!month || !year) {
+            await transaction.rollback();
+            return errorResponse(
+                res,
+                StatusCodes.BAD_REQUEST,
+                'Month and year are required'
+            );
+        }
+
+        // Check if timesheet already exists for this user/month/year
+        const existingTimesheet = await Timesheet.findOne({
+            where: {
+                user_id: targetUserId,
+                month: parseInt(month),
+                year: parseInt(year)
+            }
+        });
+
+        if (existingTimesheet) {
+            await transaction.rollback();
+            return errorResponse(
+                res,
+                StatusCodes.CONFLICT,
+                'Timesheet already exists for this month and year'
+            );
+        }
+
+        // Calculate totals from timesheet entries
+        let totalHours = 0;
+        let totalWorkingDays = 0;
+
+        timesheet_entries.forEach(entry => {
+            if (entry.working_hours) {
+                totalHours += parseFloat(entry.working_hours);
+            }
+            if (entry.status === 'present' || entry.status === 'half day') {
+                totalWorkingDays++;
+            }
+        });
+
+        // Create timesheet
+        const timesheet = await Timesheet.create({
+            user_id: targetUserId,
+            month: parseInt(month),
+            year: parseInt(year),
+            status,
+            total_hours: totalHours.toFixed(2),
+            total_working_days: totalWorkingDays,
+            submitted_at: status === 'submitted' ? new Date() : null,
+            created_by: requestingUserId
+        }, { transaction });
+
+        // Create timesheet entries
+        const entriesWithTimesheetId = timesheet_entries.map(entry => ({
+            timesheet_id: timesheet.id,
+            attendance_id: entry.attendance_id,
+            date: entry.date,
+            arrival_time: entry.arrival_time,
+            departure_time: entry.departure_time,
+            working_hours: parseFloat(entry.working_hours || 0),
+            activity: entry.activity || '',
+            description: entry.description || '',
+            status: entry.status || 'present',
+            scheduler_status: entry.scheduler_status || 'working day',
+            is_billable: entry.is_billable !== undefined ? entry.is_billable : true,
+            project_code: entry.project_code || null,
+            task_category: entry.task_category || null,
+            created_by: requestingUserId
+        }));
+
+        let createdEntries = [];
+        if (entriesWithTimesheetId.length > 0) {
+            createdEntries = await TimesheetEntry.bulkCreate(entriesWithTimesheetId, { transaction });
+        }
+
+        await transaction.commit();
+
+        // Fetch the complete timesheet with entries
+        const completeTimesheet = await Timesheet.findByPk(timesheet.id, {
+            include: [
+                {
+                    model: TimesheetEntry,
+                    as: 'entries',
+                    order: [['date', 'ASC']]
+                },
+                {
+                    model: User,
+                    as: 'employee',
+                    attributes: ['id', 'first_name', 'middle_name', 'sur_name', 'email']
+                }
+            ]
+        });
+
+        return successResponse(
+            res,
+            StatusCodes.CREATED,
+            'Timesheet created successfully',
+            completeTimesheet
+        );
+
+    } catch (error) {
+        await transaction.rollback();
+        logger.error('Create timesheet error:', error);
+
+        if (error.name === 'SequelizeUniqueConstraintError') {
+            return errorResponse(
+                res,
+                StatusCodes.CONFLICT,
+                'Timesheet already exists for this month and year'
+            );
+        }
+
+        next(error);
+    }
+};
+
+/**
+ * Update timesheet by ID
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const updateTimesheetById = async (req, res, next) => {
+    const transaction = await sequelize.transaction();
+
+    try {
+        const { id } = req.params;
+        const {
+            status,
+            timesheet_entries = [],
+            supervisor_comments
+        } = req.body;
+
+        const requestingUserId = req.user.id;
+        const userRoles = req.user.roles || [];
+
+        // Find existing timesheet
+        const timesheet = await Timesheet.findByPk(id, {
+            include: [
+                {
+                    model: TimesheetEntry,
+                    as: 'entries'
+                }
+            ]
+        });
+
+        if (!timesheet) {
+            await transaction.rollback();
+            return errorResponse(
+                res,
+                StatusCodes.NOT_FOUND,
+                'Timesheet not found'
+            );
+        }
+
+        // Check permissions
+        const isAdmin = userRoles.includes('Admin');
+        const isHR = userRoles.includes('HR Manager');
+        const isDepartmentHead = userRoles.includes('Department Head');
+        const isOwner = timesheet.user_id === requestingUserId;
+
+        if (!isAdmin && !isHR && !isDepartmentHead && !isOwner) {
+            await transaction.rollback();
+            return errorResponse(
+                res,
+                StatusCodes.FORBIDDEN,
+                'You do not have permission to update this timesheet'
+            );
+        }
+
+        // Check if timesheet can be updated based on status
+        if (timesheet.status === 'approved' && !isAdmin && !isHR) {
+            await transaction.rollback();
+            return errorResponse(
+                res,
+                StatusCodes.FORBIDDEN,
+                'Cannot update approved timesheet'
+            );
+        }
+
+        // Prepare update data
+        const updateData = {
+            updated_by: requestingUserId
+        };
+
+        if (status !== undefined) {
+            updateData.status = status;
+
+            // Set timestamp fields based on status
+            if (status === 'submitted') {
+                updateData.submitted_at = new Date();
+            } else if (status === 'approved') {
+                updateData.approved_at = new Date();
+                updateData.approved_by = requestingUserId;
+            } else if (status === 'rejected') {
+                updateData.rejected_at = new Date();
+                updateData.rejected_by = requestingUserId;
+            }
+        }
+
+        if (supervisor_comments !== undefined) {
+            updateData.supervisor_comments = supervisor_comments;
+        }
+
+        // Update timesheet entries if provided
+        if (timesheet_entries.length > 0) {
+            // Delete existing entries
+            await TimesheetEntry.destroy({
+                where: { timesheet_id: id },
+                transaction
+            });
+
+            // Calculate new totals
+            let totalHours = 0;
+            let totalWorkingDays = 0;
+
+            const newEntries = timesheet_entries.map(entry => {
+                if (entry.working_hours) {
+                    totalHours += parseFloat(entry.working_hours);
+                }
+                if (entry.status === 'present' || entry.status === 'half day') {
+                    totalWorkingDays++;
+                }
+
+                return {
+                    timesheet_id: id,
+                    attendance_id: entry.attendance_id,
+                    date: entry.date,
+                    arrival_time: entry.arrival_time,
+                    departure_time: entry.departure_time,
+                    working_hours: parseFloat(entry.working_hours || 0),
+                    activity: entry.activity || '',
+                    description: entry.description || '',
+                    status: entry.status || 'present',
+                    scheduler_status: entry.scheduler_status || 'working day',
+                    is_billable: entry.is_billable !== undefined ? entry.is_billable : true,
+                    project_code: entry.project_code || null,
+                    task_category: entry.task_category || null,
+                    created_by: entry.id ? timesheet.entries.find(e => e.id === entry.id)?.created_by || requestingUserId : requestingUserId,
+                    updated_by: requestingUserId
+                };
+            });
+
+            // Create new entries
+            await TimesheetEntry.bulkCreate(newEntries, { transaction });
+
+            // Update totals
+            updateData.total_hours = totalHours.toFixed(2);
+            updateData.total_working_days = totalWorkingDays;
+        }
+
+        // Update timesheet
+        await timesheet.update(updateData, { transaction });
+
+        await transaction.commit();
+
+        // Fetch updated timesheet with entries
+        const updatedTimesheet = await Timesheet.findByPk(id, {
+            include: [
+                {
+                    model: TimesheetEntry,
+                    as: 'entries',
+                    order: [['date', 'ASC']]
+                },
+                {
+                    model: User,
+                    as: 'employee',
+                    attributes: ['id', 'first_name', 'middle_name', 'sur_name', 'email']
+                }
+            ]
+        });
+
+        return successResponse(
+            res,
+            StatusCodes.OK,
+            'Timesheet updated successfully',
+            updatedTimesheet
+        );
+
+    } catch (error) {
+        await transaction.rollback();
+        logger.error('Update timesheet error:', error);
+        next(error);
+    }
+};
+
+/**
+ * Get timesheet by ID
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next function
+ */
+const getTimesheetById = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const requestingUserId = req.user.id;
+        const userRoles = req.user.roles || [];
+
+        // Find timesheet
+        const timesheet = await Timesheet.findByPk(id, {
+            include: [
+                {
+                    model: TimesheetEntry,
+                    as: 'entries',
+                    include: [
+                        {
+                            model: Attendance,
+                            as: 'attendance',
+                            attributes: ['id', 'arrival_time', 'departure_time', 'status']
+                        }
+                    ],
+                    order: [['date', 'ASC']]
+                },
+                {
+                    model: User,
+                    as: 'employee',
+                    attributes: ['id', 'first_name', 'middle_name', 'sur_name', 'email'],
+                    include: [
+                        {
+                            model: BasicEmployeeData,
+                            as: 'basicEmployeeData',
+                            include: [
+                                {
+                                    model: Department,
+                                    as: 'department',
+                                    attributes: ['id', 'department_name']
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    model: User,
+                    as: 'approver',
+                    attributes: ['id', 'first_name', 'middle_name', 'sur_name', 'email']
+                }
+            ]
+        });
+
+        if (!timesheet) {
+            return errorResponse(
+                res,
+                StatusCodes.NOT_FOUND,
+                'Timesheet not found'
+            );
+        }
+
+        // Check permissions
+        const isAdmin = userRoles.includes('Admin');
+        const isHR = userRoles.includes('HR Manager');
+        const isDepartmentHead = userRoles.includes('Department Head');
+        const isOwner = timesheet.user_id === requestingUserId;
+
+        if (!isAdmin && !isHR && !isDepartmentHead && !isOwner) {
+            // For department heads, check if the employee is in their department
+            if (isDepartmentHead) {
+                const userEmployee = await BasicEmployeeData.findOne({
+                    where: { user_id: requestingUserId }
+                });
+
+                const timesheetEmployee = await BasicEmployeeData.findOne({
+                    where: { user_id: timesheet.user_id }
+                });
+
+                if (!userEmployee || !timesheetEmployee ||
+                    userEmployee.department_id !== timesheetEmployee.department_id) {
+                    return errorResponse(
+                        res,
+                        StatusCodes.FORBIDDEN,
+                        'You do not have permission to view this timesheet'
+                    );
+                }
+            } else {
+                return errorResponse(
+                    res,
+                    StatusCodes.FORBIDDEN,
+                    'You do not have permission to view this timesheet'
+                );
+            }
+        }
+
+        return successResponse(
+            res,
+            StatusCodes.OK,
+            'Timesheet retrieved successfully',
+            timesheet
+        );
+
+    } catch (error) {
+        logger.error('Get timesheet by ID error:', error);
+        next(error);
+    }
+};
+
 module.exports = {
     getTimesheet,
     updateTimesheet,
     submitTimesheet,
     getTeamTimesheets,
     getMyTimesheets,
+    createTimesheet,
+    updateTimesheetById,
+    getTimesheetById
 };
