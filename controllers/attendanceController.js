@@ -211,6 +211,10 @@ const getMyAttendance = async (req, res, next) => {
       user_id: userId
     };
 
+    if (req.query.date) {
+      whereConditions.date = req.query.date;
+    }
+
     // Filter by month and year if provided
     if (month && year) {
       const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
