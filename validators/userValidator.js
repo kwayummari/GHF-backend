@@ -202,27 +202,47 @@ const createUserValidator = [
 
   // Next of kin validation
   body('next_of_kin')
-    .optional()
+    .customSanitizer(value => {
+      if (value === '' || value === null) return undefined;
+      return value;
+    })
+    .optional({ nullable: true, checkFalsy: true })
     .isArray().withMessage('Next of kin must be an array'),
 
   body('next_of_kin.*.name')
-    .optional()
+    .customSanitizer(value => {
+      if (value === '' || value === null) return undefined;
+      return value;
+    })
+    .optional({ nullable: true, checkFalsy: true })
     .trim()
     .notEmpty().withMessage('Next of kin name is required')
     .isLength({ max: 255 }).withMessage('Next of kin name cannot exceed 255 characters'),
 
   body('next_of_kin.*.phone_number')
-    .optional()
+    .customSanitizer(value => {
+      if (value === '' || value === null) return undefined;
+      return value;
+    })
+    .optional({ nullable: true, checkFalsy: true })
     .trim()
     .notEmpty().withMessage('Next of kin phone number is required')
     .matches(/^[0-9+\- ]+$/).withMessage('Next of kin phone number contains invalid characters'),
 
   body('next_of_kin.*.percentage')
-    .optional()
+    .customSanitizer(value => {
+      if (value === '' || value === null) return undefined;
+      return value;
+    })
+    .optional({ nullable: true, checkFalsy: true })
     .isInt({ min: 1, max: 100 }).withMessage('Next of kin percentage must be between 1 and 100'),
 
   body('next_of_kin.*.relationship')
-    .optional()
+    .customSanitizer(value => {
+      if (value === '' || value === null) return undefined;
+      return value;
+    })
+    .optional({ nullable: true, checkFalsy: true })
     .trim()
     .notEmpty().withMessage('Next of kin relationship is required')
     .isLength({ max: 50 }).withMessage('Next of kin relationship cannot exceed 50 characters'),

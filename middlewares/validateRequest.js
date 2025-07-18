@@ -23,7 +23,7 @@ const validateRequest = (req, res, next) => {
 
   return res.status(StatusCodes.BAD_REQUEST).json({
     success: false,
-    message: 'Validation error',
+    message: `${formattedErrors[0].message}`,
     errors: formattedErrors,
   });
 };
